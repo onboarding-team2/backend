@@ -16,19 +16,19 @@ public class AuthController {
 
     private final AuthService authService;
 
-    // [Authorization 추가 버전] 로그인 API (성공 시 토큰 발급)
+    // 로그인 (JWT 인가)
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDto> login(@RequestBody LoginRequestDto request) {
         return ResponseEntity.ok(authService.login(request));
     }
 
-    // 1. 비밀번호 찾기 - 기업 본인인증 단계 API
+    // 비밀번호 찾기
     @PostMapping("/find-password/verify")
     public ResponseEntity<String> verifyCompany(@RequestBody FindPasswordRequestDto request) {
         return ResponseEntity.ok(authService.verifyCompanyForPasswordReset(request));
     }
 
-    // 1-2. 비밀번호 찾기 - 인증 후 새 비밀번호 저장 API
+    // 인증 후 비밀번호 재설정
     @PostMapping("/find-password/reset")
     public ResponseEntity<String> resetPassword(@RequestBody ResetPasswordRequestDto request) {
         return ResponseEntity.ok(authService.resetPassword(request));
