@@ -2,6 +2,7 @@ package com.team2.onboarding.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -26,6 +27,19 @@ public class Company {
     @Column(name = "representative_name")
     private String representativeName;
 
-    //TODO : 암호화
     private String password;
+
+    @Builder
+    private Company(String companyId, String brn, String companyName, String representativeName, String password) {
+        this.companyId = companyId;
+        this.brn = brn;
+        this.companyName = companyName;
+        this.representativeName = representativeName;
+        this.password = password;
+    }
+
+    // 💡 비밀번호 재설정을 위한 도메인 비즈니스 메서드 추가
+    public void updatePassword(String encryptedPassword) {
+        this.password = encryptedPassword;
+    }
 }
