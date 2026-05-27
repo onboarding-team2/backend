@@ -1,9 +1,7 @@
 package com.team2.onboarding.entity;
 
 import jakarta.persistence.*;
-import lombok.NoArgsConstructor;
-import lombok.AccessLevel;
-import lombok.Getter;
+import lombok.*;
 import lombok.NoArgsConstructor;
 
 @Entity
@@ -21,9 +19,23 @@ public class Employee {
 
     private String name;
 
+    // TODO : 암호화
     private String rrn;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id")
     private Company company;
+
+    @Builder
+    private Employee(
+            String memberId,
+            String name,
+            String rrn,
+            Company company
+    ) {
+        this.memberId = memberId;
+        this.name = name;
+        this.rrn = rrn;
+        this.company = company;
+    }
 }

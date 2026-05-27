@@ -2,6 +2,7 @@ package com.team2.onboarding.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -28,4 +29,19 @@ public class Company {
 
     //TODO : 암호화
     private String password;
+
+    @Builder
+    private Company(
+            String companyId,
+            String brn,
+            String companyName,
+            String representativeName,
+            String password
+    ) {
+        this.companyId = companyId;
+        this.brn = brn;
+        this.companyName = companyName;
+        this.representativeName = representativeName;
+        this.password = password;
+    }
 }

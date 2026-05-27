@@ -2,6 +2,7 @@ package com.team2.onboarding.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -20,5 +21,12 @@ public class InvestmentProduct {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id")
     private Company company;
+
+    @Builder
+    private InvestmentProduct(
+            Company company
+    ) {
+        this.company = company;
+    }
 }
 
