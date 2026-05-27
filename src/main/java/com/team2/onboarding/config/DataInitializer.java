@@ -31,6 +31,9 @@ public class DataInitializer {
     @Transactional // [수정] CommandLineRunner 실행 전체가 하나의 트랜잭션으로 묶이도록 Bean에 선언하는 것이 안전합니다.
     CommandLineRunner initData() {
         return args -> {
+            if (companyRepository.count() > 0) {
+                return;
+            }
 
             /*
              * 추가 회사 대량 생성
