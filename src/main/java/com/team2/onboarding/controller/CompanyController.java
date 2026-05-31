@@ -2,6 +2,7 @@ package com.team2.onboarding.controller;
 
 import com.team2.onboarding.service.CompanyService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,10 +28,20 @@ public class CompanyController {
         return companyService.getEmployeeCount(companyId);
     }
 
+    // DC형 가입자 총액 반환 (contributions_amount 조회)
     @GetMapping("/{companyId}/dc-amount")
     public Long getDcAmount(
             @PathVariable Long companyId
     ) {
         return companyService.getDcAmount(companyId);
+    }
+
+    @GetMapping("/{companyId}/defaultOption-nonEmployee-count")
+    public ResponseEntity<Long> getDefaultOptionNonEmployeeCount(
+            @PathVariable Long companyId) {
+
+        return ResponseEntity.ok(
+                companyService.getDefaultOptionNonEmployeeCount(companyId)
+        );
     }
 }
