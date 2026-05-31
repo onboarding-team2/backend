@@ -26,4 +26,11 @@ public class CompanyController {
     ) {
         return companyService.getEmployeeCount(companyId);
     }
+
+    @GetMapping("/{companyId}/dc-amount")
+    public Long getDcAmount(
+            @PathVariable Long companyId
+    ) {
+        return companyService.getDcAmount(companyId);
+    }
 }
