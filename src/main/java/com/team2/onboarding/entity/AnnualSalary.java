@@ -2,6 +2,7 @@ package com.team2.onboarding.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -22,5 +23,16 @@ public class AnnualSalary {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id")
-    private Employee employeeRetirement;
+    private Employee employee;
+
+    @Builder
+    private AnnualSalary(
+            String year,
+            Long salary,
+            Employee employee
+    ) {
+        this.year = year;
+        this.salary = salary;
+        this.employee = employee;
+    }
 }

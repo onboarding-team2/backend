@@ -4,6 +4,7 @@ import com.team2.onboarding.enums.PaymentCycle;
 import com.team2.onboarding.enums.PlanType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -42,4 +43,23 @@ public class CompanyRetirement {
 
     @Column(name = "contribution_due_date")
     private LocalDate contributionDueDate;
+
+    @Builder
+    private CompanyRetirement(
+            String companyAccount,
+            Company company,
+            PlanType planType,
+            LocalDate contractDate,
+            LocalDate feeDueDate,
+            PaymentCycle paymentCycle,
+            LocalDate contributionDueDate
+    ) {
+        this.companyAccount = companyAccount;
+        this.company = company;
+        this.planType = planType;
+        this.contractDate = contractDate;
+        this.feeDueDate = feeDueDate;
+        this.paymentCycle = paymentCycle;
+        this.contributionDueDate = contributionDueDate;
+    }
 }

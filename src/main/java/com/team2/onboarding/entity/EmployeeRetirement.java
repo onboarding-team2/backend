@@ -3,6 +3,7 @@ package com.team2.onboarding.entity;
 import com.team2.onboarding.enums.EmployeeType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -22,7 +23,7 @@ public class EmployeeRetirement {
     private String employeeAccount;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id")
+    @JoinColumn(name = "employee_id")
     private Employee employee;
 
     @Column(name = "join_date")
@@ -45,4 +46,27 @@ public class EmployeeRetirement {
     private EmployeeType employeeType;
 
     private Long balance;
+
+    @Builder
+    private EmployeeRetirement(
+            String employeeAccount,
+            Employee employee,
+            LocalDate joinDate,
+            LocalDate startDate,
+            LocalDate terminationDate,
+            LocalDate effectiveDate,
+            Boolean defaultOption,
+            EmployeeType employeeType,
+            Long balance
+    ) {
+        this.employeeAccount = employeeAccount;
+        this.employee = employee;
+        this.joinDate = joinDate;
+        this.startDate = startDate;
+        this.terminationDate = terminationDate;
+        this.effectiveDate = effectiveDate;
+        this.defaultOption = defaultOption;
+        this.employeeType = employeeType;
+        this.balance = balance;
+    }
 }
