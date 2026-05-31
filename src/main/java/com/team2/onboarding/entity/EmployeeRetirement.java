@@ -1,6 +1,7 @@
 package com.team2.onboarding.entity;
 
 import com.team2.onboarding.enums.EmployeeType;
+import com.team2.onboarding.enums.RetirementType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -47,6 +48,10 @@ public class EmployeeRetirement {
 
     private Long balance;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "retirement_type")
+    private RetirementType retirementType;
+
     @Builder
     private EmployeeRetirement(
             String employeeAccount,
@@ -57,7 +62,8 @@ public class EmployeeRetirement {
             LocalDate effectiveDate,
             Boolean defaultOption,
             EmployeeType employeeType,
-            Long balance
+            Long balance,
+            RetirementType retirementType
     ) {
         this.employeeAccount = employeeAccount;
         this.employee = employee;
@@ -68,5 +74,6 @@ public class EmployeeRetirement {
         this.defaultOption = defaultOption;
         this.employeeType = employeeType;
         this.balance = balance;
+        this.retirementType = retirementType;
     }
 }
