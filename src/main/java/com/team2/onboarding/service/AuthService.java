@@ -5,7 +5,10 @@ import com.team2.onboarding.dto.LoginRequestDto;
 import com.team2.onboarding.dto.LoginResponseDto;
 import com.team2.onboarding.dto.ResetPasswordRequestDto;
 import com.team2.onboarding.entity.Company;
+import com.team2.onboarding.entity.CompanyRetirement;
+import com.team2.onboarding.enums.PlanType;
 import com.team2.onboarding.repository.CompanyRepository;
+import com.team2.onboarding.repository.CompanyRetirementRepository;
 import com.team2.onboarding.security.JwtTokenProvider;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +20,7 @@ import org.springframework.stereotype.Service;
 public class AuthService {
 
     private final CompanyRepository companyRepository;
+    private final CompanyRetirementRepository companyRetirementRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder(); // 암호화 컴포넌트
 
@@ -33,9 +37,13 @@ public class AuthService {
             throw new IllegalArgumentException("비밀번호가 틀렸습니다.");
         }
 
-        // 인가(Authorization)를 위한 토큰 생성 후 반환
+        PlanType planType = companyRetirementRepository
+                .findByCompanyCompanyId(company.getCompanyId())
+                .map(CompanyRetirement::getPlanType)
+                .orElseThrow(() -> new IllegalArgumentException("퇴직연금 정보가 없습니다."));
+
         String token = jwtTokenProvider.createToken(company.getCompanyId());
-        return new LoginResponseDto(token);
+        return new LoginResponseDto(token, planType);
     }
 
     //비밀번호 찾기 (회사 코드와 사업자번호가 매칭되는지 정보 유효성 검증
