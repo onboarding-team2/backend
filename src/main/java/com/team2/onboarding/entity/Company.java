@@ -42,4 +42,9 @@ public class Company {
     public void updatePassword(String encryptedPassword) {
         this.password = encryptedPassword;
     }
+
+    public void updateIdentifiers(String companyId, String brn) {
+        this.companyId = companyId;
+        this.brn = brn;
+    }
 }
