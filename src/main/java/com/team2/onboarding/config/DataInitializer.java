@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -20,6 +21,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DataInitializer {
 
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final CompanyRepository companyRepository;
     private final CompanyRetirementRepository companyRetirementRepository;
     private final InvestmentProductRepository investmentProductRepository;
@@ -50,7 +52,7 @@ public class DataInitializer {
                                 .brn(String.format("%012d", 100000000000L + i))
                                 .companyName("테스트기업" + i)
                                 .representativeName("대표" + i)
-                                .password("1234")
+                                .password(passwordEncoder.encode("1234"))
                                 .build()
                 );
 
