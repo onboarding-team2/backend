@@ -48,13 +48,16 @@ public class DataInitializer {
 
                 Company company = companyRepository.save(
                         Company.builder()
-                                .companyId(String.format("C%03d", i))
-                                .brn(String.format("%012d", 100000000000L + i))
                                 .companyName("테스트기업" + i)
                                 .representativeName("대표" + i)
                                 .password(passwordEncoder.encode("1234"))
                                 .build()
                 );
+                company.updateIdentifiers(
+                        String.format("C%05d", company.getId()),
+                        String.format("10081%05d", company.getId())
+                );
+                companyRepository.save(company);
 
                 companies.add(company);
 
