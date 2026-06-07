@@ -7,4 +7,5 @@ import lombok.Getter;
 @Builder
 public class DCDashboardResponseDto {
     private long totalEmployee;
+    private long defaultOptionNotSelected;
 }
