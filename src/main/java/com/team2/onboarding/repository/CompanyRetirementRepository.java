@@ -8,4 +8,5 @@ import java.util.Optional;
 public interface CompanyRetirementRepository
         extends JpaRepository<CompanyRetirement, String> {
 
+    Optional<CompanyRetirement> findByCompanyCompanyId(String companyId);
 }
