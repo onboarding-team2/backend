@@ -10,6 +10,8 @@ import java.util.List;
 public interface EmployeeRetirementRepository
         extends JpaRepository<EmployeeRetirement, Long> {
 
+    long countByEmployee_Company_IdAndDefaultOptionFalse(Long companyId);
+}
     List<EmployeeRetirement> findByEmployee_CompanyAndTerminationDateAfterOrderByTerminationDate(
             Company company, LocalDate date);
 }
