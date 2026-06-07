@@ -1,6 +1,7 @@
 package com.team2.onboarding.service;
 
 import com.team2.onboarding.dto.DCDashboardResponseDto;
+import com.team2.onboarding.repository.ContributionRepository;
 import com.team2.onboarding.repository.EmployeeRepository;
 import com.team2.onboarding.repository.EmployeeRetirementRepository;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +13,7 @@ public class DCService {
 
     private final EmployeeRepository employeeRepository;
     private final EmployeeRetirementRepository employeeRetirementRepository;
+    private final ContributionRepository contributionRepository;
 
     // TODO: DC 대시보드
     // public Object getDashboard(String companyId) {
@@ -33,9 +35,15 @@ public class DCService {
                                 false
                         );
 
+        // DC 적립금 총액
+        long totalContributionAmount =
+                contributionRepository
+                        .sumContributionAmountByCompanyId(companyId);
+
         return DCDashboardResponseDto.builder()
                 .totalEmployee(totalEmployee)
                 .defaultOptionNotSelected(defaultOptionNotSelected)
+                .totalContributionAmount(totalContributionAmount)
                 .build();
     }
 

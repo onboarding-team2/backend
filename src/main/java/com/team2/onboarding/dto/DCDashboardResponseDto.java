@@ -8,4 +8,5 @@ import lombok.Getter;
 public class DCDashboardResponseDto {
     private long totalEmployee;
     private long defaultOptionNotSelected;
+    private long totalContributionAmount;
 }
