@@ -1,5 +1,6 @@
 package com.team2.onboarding.dto;
 
+import com.team2.onboarding.enums.PlanType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -9,8 +10,10 @@ import lombok.NoArgsConstructor;
 public class LoginResponseDto {
     private String token;
     private String tokenType = "Bearer";
+    private PlanType planType;
 
-    public LoginResponseDto(String token) {
+    public LoginResponseDto(String token, PlanType planType) {
         this.token = token;
+        this.planType = planType;
     }
 }

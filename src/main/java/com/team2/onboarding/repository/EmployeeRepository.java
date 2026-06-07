@@ -1,5 +1,6 @@
 package com.team2.onboarding.repository;
 
+import com.team2.onboarding.entity.Company;
 import com.team2.onboarding.entity.Employee;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -42,4 +43,9 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
      * 가입자 상세 조회 — 같은 회사 소속인지도 같이 확인.
      */
     Optional<Employee> findByIdAndCompany_CompanyId(Long id, String companyId);
+}
+public interface EmployeeRepository extends JpaRepository<Employee, Long> {
+
+    long countByCompany(Company company);
+    long countByCompany_Id(Long companyId);
 }
