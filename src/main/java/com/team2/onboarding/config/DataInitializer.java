@@ -130,6 +130,7 @@ public class DataInitializer {
             /*
              * 직원 자동 생성
              */
+            List<Employee> employees = new ArrayList<>();
             int memberNo = 4;
 
             for (int ci = 0; ci < companies.size(); ci++) {
@@ -146,6 +147,8 @@ public class DataInitializer {
                                     .company(company)
                                     .build()
                     );
+
+                    employees.add(employee);
 
                     // DC 첫 번째 회사(C003)의 처음 3명에게 퇴직 예정일 설정
                     LocalDate terminationDate = null;

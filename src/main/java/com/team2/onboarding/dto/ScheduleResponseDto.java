@@ -37,7 +37,7 @@ public class ScheduleResponseDto {
         private String status;
 
         @JsonProperty("d_day")
-        private String dDay;
+        private String dayCount;
     }
 
     public static ScheduleResponseDto of(List<Schedule> scheduleList) {
@@ -50,7 +50,7 @@ public class ScheduleResponseDto {
                     if (s.getStatus() == ScheduleStatus.DONE) {
                         dDay = "완료";
                     } else if (days < 0) {
-                        dDay = Math.abs(days) + "일 초과";
+                        dDay = "D+" + Math.abs(days);
                     } else if (days == 0) {
                         dDay = "D-Day";
                     } else {
@@ -62,7 +62,7 @@ public class ScheduleResponseDto {
                             .title(s.getTitle())
                             .dueDate(s.getDueDate())
                             .status(s.getStatus().name())
-                            .dDay(dDay)
+                            .dayCount(dDay)
                             .build();
                 })
                 .toList();

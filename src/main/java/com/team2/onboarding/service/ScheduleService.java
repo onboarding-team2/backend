@@ -75,10 +75,7 @@ public class ScheduleService {
 
         List<Employee> targetEmployees = new ArrayList<>();
         if (request.getEmployeeIds() != null && !request.getEmployeeIds().isEmpty()) {
-            List<String> stringIds = request.getEmployeeIds().stream()
-                    .map(String::valueOf)
-                    .toList();
-            targetEmployees = employeeRepository.findAllById(stringIds);
+            targetEmployees = employeeRepository.findAllById(request.getEmployeeIds());
         }
 
         Schedule schedule = Schedule.builder()
