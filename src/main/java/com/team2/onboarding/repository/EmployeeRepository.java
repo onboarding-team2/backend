@@ -15,10 +15,6 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     /**
      * 회사 소속 가입자 목록 + 이름 검색 + 퇴직 여부 필터.
      * EmployeeRetirement 를 함께 fetch 해 N+1 을 막는다.
-     *
-     * @param companyId  Company.companyId (문자열 사번)
-     * @param nameKeyword null 또는 빈 문자열이면 전체
-     * @param onlyActive null = 전체, true = 재직(termination_date IS NULL), false = 퇴직
      */
     @Query("""
             SELECT e
@@ -39,13 +35,9 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
             Pageable pageable
     );
 
-    /**
-     * 가입자 상세 조회 — 같은 회사 소속인지도 같이 확인.
-     */
     Optional<Employee> findByIdAndCompany_CompanyId(Long id, String companyId);
-}
-public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
     long countByCompany(Company company);
+
     long countByCompany_Id(Long companyId);
 }
