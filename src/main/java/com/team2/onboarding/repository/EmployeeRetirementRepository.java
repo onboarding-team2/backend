@@ -19,4 +19,10 @@ public interface EmployeeRetirementRepository
     List<EmployeeRetirement> findByEmployee_IdIn(List<Long> employeeIds);
     List<EmployeeRetirement> findByEmployee_CompanyAndTerminationDateAfterOrderByTerminationDate(
             Company company, LocalDate date);
+
+
+    long countByEmployee_Company_CompanyIdAndDefaultOption(
+            String companyId,
+            Boolean defaultOption
+    );
 }

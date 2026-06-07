@@ -40,4 +40,8 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     long countByCompany(Company company);
 
     long countByCompany_Id(Long companyId);
+
+    // 가입자 총 수 jpa사용
+    long countByCompany_CompanyId(String companyId);
+
 }
