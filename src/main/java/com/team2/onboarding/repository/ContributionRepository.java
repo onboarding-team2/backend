@@ -13,5 +13,7 @@ public interface ContributionRepository
 
     Optional<Contribution> findByCompany_Id(Long companyId);
 
+    /** 회사의 가장 최근 부담금 납입 1건. */
+    Optional<Contribution> findTopByCompany_CompanyIdOrderByPaidDateDesc(String companyId);
     List<Contribution> findByCompanyAndPaidDateBetween(Company company, LocalDate start, LocalDate end);
 }
