@@ -55,7 +55,7 @@ public class CompanyController {
                 companyService.getDefaultOptionNonEmployeeCount(companyId)
         );
     }
-}
+
     // DC형 부담금 납입 현황 (월별 납입금 + 미납 여부)
     @GetMapping("/dc-contributions")
     public ResponseEntity<DcContributionStatusResponseDto> getDcContributions(

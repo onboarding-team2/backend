@@ -12,6 +12,6 @@ public interface ContributionRepository
         extends JpaRepository<Contribution, Long> {
 
     Optional<Contribution> findByCompany_Id(Long companyId);
-}
+
     List<Contribution> findByCompanyAndPaidDateBetween(Company company, LocalDate start, LocalDate end);
 }
