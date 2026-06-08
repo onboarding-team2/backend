@@ -1,10 +1,13 @@
 package com.team2.onboarding.controller;
 
+import com.team2.onboarding.dto.DcMemberItemDto;
 import com.team2.onboarding.security.JwtTokenProvider;
 import com.team2.onboarding.service.DCService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -21,7 +24,7 @@ public class DCController {
     }
 
     @GetMapping("/members")
-    public ResponseEntity<Object> getMembers(@RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<List<DcMemberItemDto>> getMembers(@RequestHeader("Authorization") String authHeader) {
         String companyId = extractCompanyId(authHeader);
         return ResponseEntity.ok(dcService.getMembers(companyId));
     }
