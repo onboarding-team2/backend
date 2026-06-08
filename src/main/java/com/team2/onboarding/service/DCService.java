@@ -1,6 +1,7 @@
 package com.team2.onboarding.service;
 
 import com.team2.onboarding.dto.DCDashboardResponseDto;
+import com.team2.onboarding.dto.DefaultOptionMemberDto;
 import com.team2.onboarding.dto.DcMemberItemDto;
 import com.team2.onboarding.entity.CompanyRetirementDc;
 import com.team2.onboarding.entity.Employee;
@@ -12,15 +13,17 @@ import com.team2.onboarding.repository.EmployeeRepository;
 import com.team2.onboarding.repository.EmployeeRetirementDcRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class DCService {
 
     private final EmployeeRepository employeeRepository;
@@ -36,7 +39,7 @@ public class DCService {
         long totalEmployee = employeeRepository.countByCompany_Id(id);
 
         long defaultOptionNotSelected = employeeRetirementDcRepository
-                .countByEmployee_Company_IdAndDefaultOptionIsNull(id);
+                .countByEmployee_Company_IdAndDefaultOption(id, "N");
 
         CompanyRetirementDc crd = companyRetirementDcRepository.findByCompanyId(id).orElse(null);
 
@@ -54,10 +57,30 @@ public class DCService {
             }
         }
 
+        List<EmployeeRetirementDc> notSelectedList = employeeRetirementDcRepository
+                .findByEmployee_Company_IdAndDefaultOptionOrderByJoinDateAsc(id, "N");
+
+        LocalDate today = LocalDate.now();
+        List<DefaultOptionMemberDto> defaultOptionMembers = notSelectedList.stream()
+                .map(er -> DefaultOptionMemberDto.builder()
+                        .name(er.getEmployee().getName())
+                        .joinDate(er.getJoinDate())
+                        .daysElapsed(ChronoUnit.DAYS.between(er.getJoinDate(), today))
+                        .build())
+                .toList();
+
+        String defaultOptionSummary = null;
+        if (defaultOptionNotSelected >= 3) {
+            String firstName = defaultOptionMembers.get(0).getName();
+            defaultOptionSummary = firstName + " 외 " + (defaultOptionNotSelected - 1) + "명";
+        }
+
         return DCDashboardResponseDto.builder()
                 .totalBalance(totalBalance)
                 .totalEmployee(totalEmployee)
                 .defaultOptionNotSelected(defaultOptionNotSelected)
+                .defaultOptionMembers(defaultOptionMembers)
+                .defaultOptionSummary(defaultOptionSummary)
                 .thisMonthContribution(thisMonthContribution)
                 .contributionDueDate(contributionDueDate)
                 .build();
@@ -90,12 +113,10 @@ public class DCService {
                 .toList();
     }
 
-    // TODO: DC 만기/퇴직 예정
     public Object getDeadlines(String companyId) {
         return null;
     }
 
-    // TODO: DC 증명서류
     public Object getDocuments(String companyId) {
         return null;
     }
