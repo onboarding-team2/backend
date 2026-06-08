@@ -127,11 +127,7 @@ public class DataInitializer {
 
                     boolean hasTermination = ei == 4 || ei == 5;
 
-                    String defaultOption = switch (ei % 3) {
-                        case 0 -> "Y";
-                        case 1 -> "N";
-                        default -> null;
-                    };
+                    String defaultOption = (ei % 3 == 0) ? "Y" : "N";
 
                     EmployeeRetirementDc erd = employeeRetirementDcRepository.save(EmployeeRetirementDc.builder()
                             .employeeAccount("DC-" + (ci * 6 + ei + 1))

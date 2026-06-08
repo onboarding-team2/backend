@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.List;
+
 @Getter
 @Builder
 public class DCDashboardResponseDto {
@@ -16,6 +18,12 @@ public class DCDashboardResponseDto {
 
     @JsonProperty("default_option_not_selected")
     private long defaultOptionNotSelected;
+
+    @JsonProperty("default_option_members")
+    private List<DefaultOptionMemberDto> defaultOptionMembers;
+
+    @JsonProperty("default_option_summary")
+    private String defaultOptionSummary;
 
     @JsonProperty("this_month_contribution")
     private long thisMonthContribution;

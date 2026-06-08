@@ -20,7 +20,8 @@ public interface EmployeeRetirementDcRepository extends JpaRepository<EmployeeRe
 
     long countByEmployee_Company_IdAndDefaultOption(Long companyId, String defaultOption);
 
-    long countByEmployee_Company_IdAndDefaultOptionIsNull(Long companyId);
+    List<EmployeeRetirementDc> findByEmployee_Company_IdAndDefaultOptionOrderByJoinDateAsc(
+            Long companyId, String defaultOption);
 
     @Query("SELECT COALESCE(SUM(e.balance), 0) FROM EmployeeRetirementDc e WHERE e.employee.company.id = :companyId")
     long sumBalanceByCompanyId(@Param("companyId") Long companyId);
