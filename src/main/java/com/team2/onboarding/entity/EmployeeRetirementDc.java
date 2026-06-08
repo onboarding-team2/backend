@@ -1,6 +1,5 @@
 package com.team2.onboarding.entity;
 
-import com.team2.onboarding.enums.EmployeeType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -28,21 +27,11 @@ public class EmployeeRetirementDc {
     @Column(name = "join_date")
     private LocalDate joinDate;
 
-    @Column(name = "start_date")
-    private LocalDate startDate;
-
-    @Column(name = "termination_date")
-    private LocalDate terminationDate;
-
     @Column(name = "effective_date")
     private LocalDate effectiveDate;
 
     @Column(name = "default_option")
     private String defaultOption;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "employee_type")
-    private EmployeeType employeeType;
 
     private Long balance;
 
@@ -56,17 +45,13 @@ public class EmployeeRetirementDc {
 
     @Builder
     private EmployeeRetirementDc(String employeeAccount, String accountType, LocalDate joinDate,
-            LocalDate startDate, LocalDate terminationDate, LocalDate effectiveDate,
-            String defaultOption, EmployeeType employeeType, Long balance,
+            LocalDate effectiveDate, String defaultOption, Long balance,
             Employee employee, CompanyRetirementDc companyRetirementDc) {
         this.employeeAccount = employeeAccount;
         this.accountType = accountType != null ? accountType : "DC";
         this.joinDate = joinDate;
-        this.startDate = startDate;
-        this.terminationDate = terminationDate;
         this.effectiveDate = effectiveDate;
         this.defaultOption = defaultOption;
-        this.employeeType = employeeType;
         this.balance = balance;
         this.employee = employee;
         this.companyRetirementDc = companyRetirementDc;

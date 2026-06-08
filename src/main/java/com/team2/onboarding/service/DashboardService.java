@@ -81,7 +81,7 @@ public class DashboardService {
                 .orElseThrow(() -> new IllegalArgumentException("회사를 찾을 수 없습니다."));
 
         List<EmployeeRetirementDc> retirees = employeeRetirementDcRepository
-                .findByEmployee_Company_IdAndTerminationDateAfterOrderByTerminationDate(id, LocalDate.now());
+                .findByEmployee_Company_IdAndEmployee_TerminationDateAfterOrderByEmployee_TerminationDateAsc(id, LocalDate.now());
 
         List<ExpectedRetireeDto> result = new ArrayList<>();
         for (int i = 0; i < retirees.size(); i++) {
@@ -89,7 +89,7 @@ public class DashboardService {
             result.add(ExpectedRetireeDto.builder()
                     .rank(i + 1)
                     .name(er.getEmployee().getName())
-                    .retirementDate(er.getTerminationDate())
+                    .retirementDate(er.getEmployee().getTerminationDate())
                     .retirementType(null)
                     .build());
         }

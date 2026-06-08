@@ -111,16 +111,20 @@ public class DataInitializer {
                 // 직원 6명 생성
                 for (int ei = 0; ei < employeeData.length; ei++) {
                     String rrn = employeeData[ei][1] + String.format("%07d", (ci * 6 + ei + 1));
+                    LocalDate terminationDate = ei == 4
+                            ? LocalDate.of(year, 8, 31)
+                            : ei == 5 ? LocalDate.of(year, 7, 15) : null;
+
                     Employee employee = employeeRepository.save(Employee.builder()
                             .name(employeeData[ei][0])
                             .rrn(rrn)
+                            .employeeType(ei == 3 ? EmployeeType.EXECUTIVE : EmployeeType.EMPLOYEE)
+                            .startDate(LocalDate.of(2020, 1, 1))
+                            .terminationDate(terminationDate)
                             .company(company)
                             .build());
 
                     boolean hasTermination = ei == 4 || ei == 5;
-                    LocalDate terminationDate = ei == 4
-                            ? LocalDate.of(year, 8, 31)
-                            : ei == 5 ? LocalDate.of(year, 7, 15) : null;
 
                     String defaultOption = switch (ei % 3) {
                         case 0 -> "Y";
@@ -132,11 +136,8 @@ public class DataInitializer {
                             .employeeAccount("DC-" + (ci * 6 + ei + 1))
                             .accountType("DC")
                             .joinDate(LocalDate.of(2022, 4, 1))
-                            .startDate(LocalDate.of(2020, 1, 1))
-                            .terminationDate(terminationDate)
                             .effectiveDate(LocalDate.of(2020, 1, 1))
                             .defaultOption(defaultOption)
-                            .employeeType(ei == 3 ? EmployeeType.EXECUTIVE : EmployeeType.EMPLOYEE)
                             .balance(20_000_000L + (long) (ei + 1) * 5_000_000L)
                             .employee(employee)
                             .companyRetirementDc(crd)
