@@ -1,5 +1,6 @@
 package com.team2.onboarding.entity;
 
+import com.team2.onboarding.enums.PlanType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -27,12 +28,18 @@ public class Company {
 
     private String password;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "plan_type", length = 2)
+    private PlanType planType;
+
     @Builder
-    private Company(String brn, String companyName, String representativeName, String password) {
+    private Company(String brn, String companyName, String representativeName,
+            String password, PlanType planType) {
         this.brn = brn;
         this.companyName = companyName;
         this.representativeName = representativeName;
         this.password = password;
+        this.planType = planType;
     }
 
     public void updatePassword(String encryptedPassword) {

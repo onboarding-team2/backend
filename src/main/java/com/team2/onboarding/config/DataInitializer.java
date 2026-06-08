@@ -64,6 +64,7 @@ public class DataInitializer {
                         .companyName(companyData[ci][1])
                         .representativeName(companyData[ci][2])
                         .password(passwordEncoder.encode("1234"))
+                        .planType(PlanType.DC)
                         .build());
 
                 CompanyRetirementDc crd = companyRetirementDcRepository.save(CompanyRetirementDc.builder()
