@@ -4,11 +4,13 @@ import com.team2.onboarding.dto.DcContributionStatusResponseDto;
 import com.team2.onboarding.dto.ExpectedRetireeDto;
 import com.team2.onboarding.dto.MonthlyPaymentDto;
 import com.team2.onboarding.entity.Company;
+import com.team2.onboarding.entity.CompanyRetirementDc;
 import com.team2.onboarding.entity.Contribution;
-import com.team2.onboarding.entity.EmployeeRetirement;
+import com.team2.onboarding.entity.EmployeeRetirementDc;
 import com.team2.onboarding.repository.CompanyRepository;
+import com.team2.onboarding.repository.CompanyRetirementDcRepository;
 import com.team2.onboarding.repository.ContributionRepository;
-import com.team2.onboarding.repository.EmployeeRetirementRepository;
+import com.team2.onboarding.repository.EmployeeRetirementDcRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -23,25 +25,31 @@ import java.util.stream.Collectors;
 public class DashboardService {
 
     private final CompanyRepository companyRepository;
+    private final CompanyRetirementDcRepository companyRetirementDcRepository;
     private final ContributionRepository contributionRepository;
-    private final EmployeeRetirementRepository employeeRetirementRepository;
+    private final EmployeeRetirementDcRepository employeeRetirementDcRepository;
 
     public DcContributionStatusResponseDto getDcContributionStatus(String companyId) {
-        Company company = companyRepository.findByCompanyId(companyId)
+        Long id = Long.parseLong(companyId);
+        companyRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("회사를 찾을 수 없습니다."));
+
+        CompanyRetirementDc crd = companyRetirementDcRepository.findByCompanyId(id)
+                .orElseThrow(() -> new IllegalArgumentException("퇴직연금 정보가 없습니다."));
 
         int currentYear = LocalDate.now().getYear();
         int currentMonth = LocalDate.now().getMonthValue();
 
-        List<Contribution> contributions = contributionRepository.findByCompanyAndPaidDateBetween(
-                company,
+        List<Contribution> contributions = contributionRepository.findByCompanyRetirementDcAndDueDateBetween(
+                crd,
                 LocalDate.of(currentYear, 1, 1),
                 LocalDate.of(currentYear, 12, 31)
         );
 
         Map<Integer, Long> paidByMonth = contributions.stream()
+                .filter(c -> c.getPaidDate() != null)
                 .collect(Collectors.toMap(
-                        c -> c.getPaidDate().getMonthValue(),
+                        c -> c.getDueDate().getMonthValue(),
                         Contribution::getContributionAmount
                 ));
 
@@ -68,23 +76,21 @@ public class DashboardService {
     }
 
     public List<ExpectedRetireeDto> getExpectedRetirees(String companyId) {
-        Company company = companyRepository.findByCompanyId(companyId)
+        Long id = Long.parseLong(companyId);
+        companyRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("회사를 찾을 수 없습니다."));
 
-        List<EmployeeRetirement> retirees = employeeRetirementRepository
-                .findByEmployee_CompanyAndTerminationDateAfterOrderByTerminationDate(company, LocalDate.now());
+        List<EmployeeRetirementDc> retirees = employeeRetirementDcRepository
+                .findByEmployee_Company_IdAndTerminationDateAfterOrderByTerminationDate(id, LocalDate.now());
 
         List<ExpectedRetireeDto> result = new ArrayList<>();
         for (int i = 0; i < retirees.size(); i++) {
-            EmployeeRetirement er = retirees.get(i);
+            EmployeeRetirementDc er = retirees.get(i);
             result.add(ExpectedRetireeDto.builder()
                     .rank(i + 1)
                     .name(er.getEmployee().getName())
-                    .memberId(er.getEmployee().getMemberId())
                     .retirementDate(er.getTerminationDate())
-                    .retirementType(er.getRetirementType() != null
-                            ? er.getRetirementType().getDescription()
-                            : null)
+                    .retirementType(null)
                     .build());
         }
         return result;

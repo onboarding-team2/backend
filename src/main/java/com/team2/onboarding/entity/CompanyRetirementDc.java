@@ -13,8 +13,8 @@ import java.time.LocalDate;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "company_retirement")
-public class CompanyRetirement {
+@Table(name = "company_retirement_dc")
+public class CompanyRetirementDc {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,10 +22,6 @@ public class CompanyRetirement {
 
     @Column(name = "company_account")
     private String companyAccount;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "company_id")
-    private Company company;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "plan_type")
@@ -44,22 +40,19 @@ public class CompanyRetirement {
     @Column(name = "contribution_due_date")
     private LocalDate contributionDueDate;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id")
+    private Company company;
+
     @Builder
-    private CompanyRetirement(
-            String companyAccount,
-            Company company,
-            PlanType planType,
-            LocalDate contractDate,
-            LocalDate feeDueDate,
-            PaymentCycle paymentCycle,
-            LocalDate contributionDueDate
-    ) {
+    private CompanyRetirementDc(String companyAccount, PlanType planType, LocalDate contractDate,
+            LocalDate feeDueDate, PaymentCycle paymentCycle, LocalDate contributionDueDate, Company company) {
         this.companyAccount = companyAccount;
-        this.company = company;
         this.planType = planType;
         this.contractDate = contractDate;
         this.feeDueDate = feeDueDate;
         this.paymentCycle = paymentCycle;
         this.contributionDueDate = contributionDueDate;
+        this.company = company;
     }
 }

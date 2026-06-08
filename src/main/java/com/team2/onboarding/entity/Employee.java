@@ -1,7 +1,9 @@
 package com.team2.onboarding.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
@@ -14,12 +16,9 @@ public class Employee {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "member_id", unique = true)
-    private String memberId;
-
     private String name;
 
-    // TODO : 암호화
+    @Column(length = 13)
     private String rrn;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -27,13 +26,7 @@ public class Employee {
     private Company company;
 
     @Builder
-    private Employee(
-            String memberId,
-            String name,
-            String rrn,
-            Company company
-    ) {
-        this.memberId = memberId;
+    private Employee(String name, String rrn, Company company) {
         this.name = name;
         this.rrn = rrn;
         this.company = company;

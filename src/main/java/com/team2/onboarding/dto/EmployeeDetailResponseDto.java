@@ -8,15 +8,13 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 import java.util.List;
 
-/** 가입자 상세 조회 응답. */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class EmployeeDetailResponseDto {
 
     private Long id;
-    private String memberId;
     private String name;
-    private String rrnMasked;           // 주민번호는 마스킹해서 내려준다
+    private String rrnMasked;
     private CompanyInfo company;
     private RetirementInfo retirement;
     private List<AnnualSalaryDto> annualSalaries;
@@ -24,7 +22,6 @@ public class EmployeeDetailResponseDto {
     @Builder
     private EmployeeDetailResponseDto(
             Long id,
-            String memberId,
             String name,
             String rrnMasked,
             CompanyInfo company,
@@ -32,7 +29,6 @@ public class EmployeeDetailResponseDto {
             List<AnnualSalaryDto> annualSalaries
     ) {
         this.id = id;
-        this.memberId = memberId;
         this.name = name;
         this.rrnMasked = rrnMasked;
         this.company = company;
@@ -43,13 +39,11 @@ public class EmployeeDetailResponseDto {
     @Getter
     @NoArgsConstructor(access = AccessLevel.PROTECTED)
     public static class CompanyInfo {
-        private String companyId;
         private String companyName;
-        private String planType;        // DC/DB/IRP
+        private String planType;
 
         @Builder
-        private CompanyInfo(String companyId, String companyName, String planType) {
-            this.companyId = companyId;
+        private CompanyInfo(String companyName, String planType) {
             this.companyName = companyName;
             this.planType = planType;
         }
@@ -59,15 +53,15 @@ public class EmployeeDetailResponseDto {
     @NoArgsConstructor(access = AccessLevel.PROTECTED)
     public static class RetirementInfo {
         private String employeeAccount;
-        private String employeeType;    // EXECUTIVE/EMPLOYEE
-        private String position;        // 임원/사원
+        private String employeeType;
+        private String position;
         private LocalDate joinDate;
         private LocalDate startDate;
         private LocalDate effectiveDate;
         private LocalDate terminationDate;
-        private Boolean defaultOption;
+        private String defaultOption;
         private Long balance;
-        private String status;          // "재직" / "퇴직"
+        private String status;
 
         @Builder
         private RetirementInfo(
@@ -78,7 +72,7 @@ public class EmployeeDetailResponseDto {
                 LocalDate startDate,
                 LocalDate effectiveDate,
                 LocalDate terminationDate,
-                Boolean defaultOption,
+                String defaultOption,
                 Long balance,
                 String status
         ) {

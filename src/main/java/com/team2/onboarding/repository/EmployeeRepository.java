@@ -12,36 +12,28 @@ import java.util.Optional;
 
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
-    /**
-     * 회사 소속 가입자 목록 + 이름 검색 + 퇴직 여부 필터.
-     * EmployeeRetirement 를 함께 fetch 해 N+1 을 막는다.
-     */
     @Query("""
             SELECT e
               FROM Employee e
               LEFT JOIN FETCH e.company c
-              LEFT JOIN com.team2.onboarding.entity.EmployeeRetirement r
+              LEFT JOIN com.team2.onboarding.entity.EmployeeRetirementDc r
                     ON r.employee = e
-             WHERE c.companyId = :companyId
+             WHERE c.id = :companyId
                AND (:nameKeyword IS NULL OR :nameKeyword = '' OR e.name LIKE CONCAT('%', :nameKeyword, '%'))
                AND (:onlyActive IS NULL
                     OR (:onlyActive = TRUE  AND r.terminationDate IS NULL)
                     OR (:onlyActive = FALSE AND r.terminationDate IS NOT NULL))
             """)
     Page<Employee> searchByCompany(
-            @Param("companyId") String companyId,
+            @Param("companyId") Long companyId,
             @Param("nameKeyword") String nameKeyword,
             @Param("onlyActive") Boolean onlyActive,
             Pageable pageable
     );
 
-    Optional<Employee> findByIdAndCompany_CompanyId(Long id, String companyId);
+    Optional<Employee> findByIdAndCompanyId(Long id, Long companyId);
 
     long countByCompany(Company company);
 
     long countByCompany_Id(Long companyId);
-
-    // 가입자 총 수 jpa사용
-    long countByCompany_CompanyId(String companyId);
-
 }

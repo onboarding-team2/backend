@@ -1,6 +1,5 @@
 package com.team2.onboarding.entity;
 
-import com.team2.onboarding.enums.PaymentCycle;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -12,15 +11,18 @@ import java.time.LocalDate;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "contributions")
-public class Contribution {
+@Table(name = "fee_payments")
+public class FeePayment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "contribution_amount")
-    private Long contributionAmount;
+    @Column(name = "fee_amount")
+    private Long feeAmount;
+
+    @Column(name = "fee_type")
+    private String feeType;
 
     @Column(name = "due_date")
     private LocalDate dueDate;
@@ -30,21 +32,18 @@ public class Contribution {
 
     private String status;
 
-    @Enumerated(EnumType.STRING)
-    private PaymentCycle cycle;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_retirement_dc_id")
     private CompanyRetirementDc companyRetirementDc;
 
     @Builder
-    private Contribution(Long contributionAmount, LocalDate dueDate, LocalDate paidDate,
-            String status, PaymentCycle cycle, CompanyRetirementDc companyRetirementDc) {
-        this.contributionAmount = contributionAmount;
+    private FeePayment(Long feeAmount, String feeType, LocalDate dueDate,
+            LocalDate paidDate, String status, CompanyRetirementDc companyRetirementDc) {
+        this.feeAmount = feeAmount;
+        this.feeType = feeType;
         this.dueDate = dueDate;
         this.paidDate = paidDate;
         this.status = status;
-        this.cycle = cycle;
         this.companyRetirementDc = companyRetirementDc;
     }
 }

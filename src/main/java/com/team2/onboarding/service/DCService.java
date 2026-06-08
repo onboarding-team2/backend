@@ -1,9 +1,11 @@
 package com.team2.onboarding.service;
 
 import com.team2.onboarding.dto.DCDashboardResponseDto;
+import com.team2.onboarding.entity.CompanyRetirementDc;
+import com.team2.onboarding.repository.CompanyRetirementDcRepository;
 import com.team2.onboarding.repository.ContributionRepository;
 import com.team2.onboarding.repository.EmployeeRepository;
-import com.team2.onboarding.repository.EmployeeRetirementRepository;
+import com.team2.onboarding.repository.EmployeeRetirementDcRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -12,33 +14,24 @@ import org.springframework.stereotype.Service;
 public class DCService {
 
     private final EmployeeRepository employeeRepository;
-    private final EmployeeRetirementRepository employeeRetirementRepository;
+    private final EmployeeRetirementDcRepository employeeRetirementDcRepository;
+    private final CompanyRetirementDcRepository companyRetirementDcRepository;
     private final ContributionRepository contributionRepository;
 
-    // TODO: DC 대시보드
-    // public Object getDashboard(String companyId) {
-    //     return null;
-    // }
-
-    // DC 대시보드
     public DCDashboardResponseDto getDashboard(String companyId) {
+        Long id = Long.parseLong(companyId);
 
-        // 총 가입자 수
-        long totalEmployee =
-                employeeRepository.countByCompany_CompanyId(companyId);
+        long totalEmployee = employeeRepository.countByCompany_Id(id);
 
-        // 디폴트옵션 미지정자 수
-        long defaultOptionNotSelected =
-                employeeRetirementRepository
-                        .countByEmployee_Company_CompanyIdAndDefaultOption(
-                                companyId,
-                                false
-                        );
+        long defaultOptionNotSelected = employeeRetirementDcRepository
+                .countByEmployee_Company_IdAndDefaultOption(id, "N");
 
-        // DC 적립금 총액
-        long totalContributionAmount =
-                contributionRepository
-                        .sumContributionAmountByCompanyId(companyId);
+        CompanyRetirementDc crd = companyRetirementDcRepository.findByCompanyId(id).orElse(null);
+        long totalContributionAmount = crd == null ? 0L :
+                contributionRepository.findByCompanyRetirementDc(crd).stream()
+                        .filter(c -> c.getPaidDate() != null)
+                        .mapToLong(c -> c.getContributionAmount())
+                        .sum();
 
         return DCDashboardResponseDto.builder()
                 .totalEmployee(totalEmployee)
@@ -46,7 +39,6 @@ public class DCService {
                 .totalContributionAmount(totalContributionAmount)
                 .build();
     }
-
 
     // TODO: DC 가입자 현황
     public Object getMembers(String companyId) {
