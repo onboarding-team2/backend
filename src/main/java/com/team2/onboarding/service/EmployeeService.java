@@ -106,7 +106,7 @@ public class EmployeeService {
                         .companyName(employee.getCompany().getCompanyName())
                         .planType(planType)
                         .build())
-                .retirement(toRetirementInfo(retirement))
+                .retirement(toRetirementInfo(employee, retirement))
                 .annualSalaries(salaries)
                 .build();
     }
@@ -117,34 +117,33 @@ public class EmployeeService {
             String planType,
             boolean contributionPaid
     ) {
+        EmployeeType type = e.getEmployeeType();
         return EmployeeListItemDto.builder()
                 .id(e.getId())
                 .name(e.getName())
-                .position(r != null && r.getEmployeeType() != null
-                        ? r.getEmployeeType().getDescription()
-                        : null)
+                .position(type != null ? type.getDescription() : null)
                 .joinDate(r != null ? r.getJoinDate() : null)
                 .planType(planType)
                 .balance(r != null ? r.getBalance() : null)
                 .contributionPaid(contributionPaid)
-                .status(toStatusLabel(r))
+                .status(e.getTerminationDate() == null ? "재직" : "퇴직")
                 .build();
     }
 
-    private EmployeeDetailResponseDto.RetirementInfo toRetirementInfo(EmployeeRetirementDc r) {
+    private EmployeeDetailResponseDto.RetirementInfo toRetirementInfo(Employee e, EmployeeRetirementDc r) {
         if (r == null) return null;
-        EmployeeType type = r.getEmployeeType();
+        EmployeeType type = e.getEmployeeType();
         return EmployeeDetailResponseDto.RetirementInfo.builder()
                 .employeeAccount(r.getEmployeeAccount())
                 .employeeType(type != null ? type.name() : null)
                 .position(type != null ? type.getDescription() : null)
                 .joinDate(r.getJoinDate())
-                .startDate(r.getStartDate())
+                .startDate(e.getStartDate())
                 .effectiveDate(r.getEffectiveDate())
-                .terminationDate(r.getTerminationDate())
+                .terminationDate(e.getTerminationDate())
                 .defaultOption(r.getDefaultOption())
                 .balance(r.getBalance())
-                .status(toStatusLabel(r))
+                .status(e.getTerminationDate() == null ? "재직" : "퇴직")
                 .build();
     }
 
@@ -153,11 +152,6 @@ public class EmployeeService {
                 .year(s.getYear())
                 .salary(s.getSalary())
                 .build();
-    }
-
-    private String toStatusLabel(EmployeeRetirementDc r) {
-        if (r == null) return null;
-        return r.getTerminationDate() == null ? "재직" : "퇴직";
     }
 
     private Boolean parseStatus(String status) {

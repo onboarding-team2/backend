@@ -21,8 +21,8 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
              WHERE c.id = :companyId
                AND (:nameKeyword IS NULL OR :nameKeyword = '' OR e.name LIKE CONCAT('%', :nameKeyword, '%'))
                AND (:onlyActive IS NULL
-                    OR (:onlyActive = TRUE  AND r.terminationDate IS NULL)
-                    OR (:onlyActive = FALSE AND r.terminationDate IS NOT NULL))
+                    OR (:onlyActive = TRUE  AND e.terminationDate IS NULL)
+                    OR (:onlyActive = FALSE AND e.terminationDate IS NOT NULL))
             """)
     Page<Employee> searchByCompany(
             @Param("companyId") Long companyId,

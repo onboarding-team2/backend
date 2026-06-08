@@ -13,7 +13,7 @@ public interface EmployeeRetirementDcRepository extends JpaRepository<EmployeeRe
 
     List<EmployeeRetirementDc> findByEmployee_Company_Id(Long companyId);
 
-    List<EmployeeRetirementDc> findByEmployee_Company_IdAndTerminationDateAfterOrderByTerminationDate(
+    List<EmployeeRetirementDc> findByEmployee_Company_IdAndEmployee_TerminationDateAfterOrderByEmployee_TerminationDateAsc(
             Long companyId, LocalDate date);
 
     long countByEmployee_Company_IdAndDefaultOption(Long companyId, String defaultOption);
