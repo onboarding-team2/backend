@@ -13,6 +13,8 @@ import com.team2.onboarding.repository.EmployeeRetirementDcRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -29,22 +31,35 @@ public class DCService {
     public DCDashboardResponseDto getDashboard(String companyId) {
         Long id = Long.parseLong(companyId);
 
+        long totalBalance = employeeRetirementDcRepository.sumBalanceByCompanyId(id);
+
         long totalEmployee = employeeRepository.countByCompany_Id(id);
 
         long defaultOptionNotSelected = employeeRetirementDcRepository
-                .countByEmployee_Company_IdAndDefaultOption(id, "N");
+                .countByEmployee_Company_IdAndDefaultOptionIsNull(id);
 
         CompanyRetirementDc crd = companyRetirementDcRepository.findByCompanyId(id).orElse(null);
-        long totalContributionAmount = crd == null ? 0L :
-                contributionRepository.findByCompanyRetirementDc(crd).stream()
-                        .filter(c -> c.getPaidDate() != null)
-                        .mapToLong(c -> c.getContributionAmount())
-                        .sum();
+
+        long thisMonthContribution = 0L;
+        String contributionDueDate = null;
+        if (crd != null) {
+            LocalDate now = LocalDate.now();
+            LocalDate start = now.withDayOfMonth(1);
+            LocalDate end = now.withDayOfMonth(now.lengthOfMonth());
+            var thisMonth = contributionRepository
+                    .findTopByCompanyRetirementDcAndDueDateBetweenOrderByDueDateAsc(crd, start, end);
+            if (thisMonth.isPresent()) {
+                thisMonthContribution = thisMonth.get().getContributionAmount();
+                contributionDueDate = thisMonth.get().getDueDate().toString();
+            }
+        }
 
         return DCDashboardResponseDto.builder()
+                .totalBalance(totalBalance)
                 .totalEmployee(totalEmployee)
                 .defaultOptionNotSelected(defaultOptionNotSelected)
-                .totalContributionAmount(totalContributionAmount)
+                .thisMonthContribution(thisMonthContribution)
+                .contributionDueDate(contributionDueDate)
                 .build();
     }
 
