@@ -10,7 +10,6 @@ import java.time.LocalDate;
 public class ExpectedRetireeDto {
     private int rank;
     private String name;
-    private String memberId;
     private LocalDate retirementDate;
     private String retirementType;
 }

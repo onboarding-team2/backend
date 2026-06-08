@@ -7,25 +7,22 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
-/** 가입자 목록의 한 행. */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class EmployeeListItemDto {
 
     private Long id;
-    private String memberId;
     private String name;
-    private String position;          // 직위 (임원/사원) - EmployeeType.description
+    private String position;
     private LocalDate joinDate;
-    private String planType;          // DC/DB - 회사 단위 값
+    private String planType;
     private Long balance;
-    private Boolean contributionPaid; // 회사 최근 부담금 납입 여부 (정의 합의 필요)
-    private String status;            // "재직" / "퇴직"
+    private Boolean contributionPaid;
+    private String status;
 
     @Builder
     private EmployeeListItemDto(
             Long id,
-            String memberId,
             String name,
             String position,
             LocalDate joinDate,
@@ -35,7 +32,6 @@ public class EmployeeListItemDto {
             String status
     ) {
         this.id = id;
-        this.memberId = memberId;
         this.name = name;
         this.position = position;
         this.joinDate = joinDate;

@@ -1,7 +1,6 @@
 package com.team2.onboarding.entity;
 
 import com.team2.onboarding.enums.EmployeeType;
-import com.team2.onboarding.enums.RetirementType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -13,8 +12,8 @@ import java.time.LocalDate;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "employees_retirement")
-public class EmployeeRetirement {
+@Table(name = "employee_retirement_dc")
+public class EmployeeRetirementDc {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,9 +22,8 @@ public class EmployeeRetirement {
     @Column(name = "employee_account")
     private String employeeAccount;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "employee_id")
-    private Employee employee;
+    @Column(name = "account_type")
+    private String accountType;
 
     @Column(name = "join_date")
     private LocalDate joinDate;
@@ -40,7 +38,7 @@ public class EmployeeRetirement {
     private LocalDate effectiveDate;
 
     @Column(name = "default_option")
-    private Boolean defaultOption;
+    private String defaultOption;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "employee_type")
@@ -48,25 +46,21 @@ public class EmployeeRetirement {
 
     private Long balance;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "retirement_type")
-    private RetirementType retirementType;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "employee_id")
+    private Employee employee;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_retirement_dc_id")
+    private CompanyRetirementDc companyRetirementDc;
 
     @Builder
-    private EmployeeRetirement(
-            String employeeAccount,
-            Employee employee,
-            LocalDate joinDate,
-            LocalDate startDate,
-            LocalDate terminationDate,
-            LocalDate effectiveDate,
-            Boolean defaultOption,
-            EmployeeType employeeType,
-            Long balance,
-            RetirementType retirementType
-    ) {
+    private EmployeeRetirementDc(String employeeAccount, String accountType, LocalDate joinDate,
+            LocalDate startDate, LocalDate terminationDate, LocalDate effectiveDate,
+            String defaultOption, EmployeeType employeeType, Long balance,
+            Employee employee, CompanyRetirementDc companyRetirementDc) {
         this.employeeAccount = employeeAccount;
-        this.employee = employee;
+        this.accountType = accountType != null ? accountType : "DC";
         this.joinDate = joinDate;
         this.startDate = startDate;
         this.terminationDate = terminationDate;
@@ -74,6 +68,7 @@ public class EmployeeRetirement {
         this.defaultOption = defaultOption;
         this.employeeType = employeeType;
         this.balance = balance;
-        this.retirementType = retirementType;
+        this.employee = employee;
+        this.companyRetirementDc = companyRetirementDc;
     }
 }

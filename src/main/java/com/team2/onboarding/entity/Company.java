@@ -16,9 +16,7 @@ public class Company {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "company_id", unique = true)
-    private String companyId;
-
+    @Column(unique = true, length = 10)
     private String brn;
 
     @Column(name = "company_name")
@@ -30,21 +28,14 @@ public class Company {
     private String password;
 
     @Builder
-    private Company(String companyId, String brn, String companyName, String representativeName, String password) {
-        this.companyId = companyId;
+    private Company(String brn, String companyName, String representativeName, String password) {
         this.brn = brn;
         this.companyName = companyName;
         this.representativeName = representativeName;
         this.password = password;
     }
 
-    // 💡 비밀번호 재설정을 위한 도메인 비즈니스 메서드 추가
     public void updatePassword(String encryptedPassword) {
         this.password = encryptedPassword;
-    }
-
-    public void updateIdentifiers(String companyId, String brn) {
-        this.companyId = companyId;
-        this.brn = brn;
     }
 }

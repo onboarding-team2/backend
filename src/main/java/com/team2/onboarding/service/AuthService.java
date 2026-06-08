@@ -5,10 +5,10 @@ import com.team2.onboarding.dto.LoginRequestDto;
 import com.team2.onboarding.dto.LoginResponseDto;
 import com.team2.onboarding.dto.ResetPasswordRequestDto;
 import com.team2.onboarding.entity.Company;
-import com.team2.onboarding.entity.CompanyRetirement;
+import com.team2.onboarding.entity.CompanyRetirementDc;
 import com.team2.onboarding.enums.PlanType;
 import com.team2.onboarding.repository.CompanyRepository;
-import com.team2.onboarding.repository.CompanyRetirementRepository;
+import com.team2.onboarding.repository.CompanyRetirementDcRepository;
 import com.team2.onboarding.security.JwtTokenProvider;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -20,11 +20,10 @@ import org.springframework.stereotype.Service;
 public class AuthService {
 
     private final CompanyRepository companyRepository;
-    private final CompanyRetirementRepository companyRetirementRepository;
+    private final CompanyRetirementDcRepository companyRetirementDcRepository;
     private final JwtTokenProvider jwtTokenProvider;
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder(); // 암호화 컴포넌트
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-    // 로그인 시 암호화 비밀번호 대조 + JWT 토큰 발행
     public LoginResponseDto login(LoginRequestDto request) {
         Company company = companyRepository.findByBrn(request.getBrn())
                 .orElseThrow(() -> new IllegalArgumentException("사업자번호가 존재하지 않습니다."));
@@ -37,16 +36,15 @@ public class AuthService {
             throw new IllegalArgumentException("비밀번호가 틀렸습니다.");
         }
 
-        PlanType planType = companyRetirementRepository
-                .findByCompanyCompanyId(company.getCompanyId())
-                .map(CompanyRetirement::getPlanType)
-                .orElseThrow(() -> new IllegalArgumentException("퇴직연금 정보가 없습니다."));
+        PlanType planType = companyRetirementDcRepository
+                .findByCompanyId(company.getId())
+                .map(CompanyRetirementDc::getPlanType)
+                .orElse(PlanType.DC);
 
-        String token = jwtTokenProvider.createToken(company.getCompanyId());
+        String token = jwtTokenProvider.createToken(company.getId().toString());
         return new LoginResponseDto(token, planType);
     }
 
-    //비밀번호 찾기 (회사 코드와 사업자번호가 매칭되는지 정보 유효성 검증
     public String verifyCompanyForPasswordReset(FindPasswordRequestDto request) {
         companyRepository.findByCompanyNameAndBrn(request.getCompanyName(), request.getBrn())
                 .orElseThrow(() -> new IllegalArgumentException("입력하신 기업 정보와 일치하는 계정이 없습니다."));
@@ -54,13 +52,11 @@ public class AuthService {
         return "기업 확인 완료. 비밀번호 재설정이 가능합니다.";
     }
 
-    // 비밀번호 변경 + 암호화
     @Transactional
     public String resetPassword(ResetPasswordRequestDto request) {
         Company company = companyRepository.findByCompanyNameAndBrn(request.getCompanyName(), request.getBrn())
                 .orElseThrow(() -> new IllegalArgumentException("기업 정보가 올바르지 않습니다."));
 
-        // 새 비밀번호 암호화 후 도메인 객체에 반영
         String encryptedPassword = passwordEncoder.encode(request.getNewPassword());
         company.updatePassword(encryptedPassword);
 
