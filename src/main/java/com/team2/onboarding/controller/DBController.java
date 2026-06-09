@@ -58,10 +58,10 @@ public class DBController {
         return ResponseEntity.ok(investmentProductDbService.getPortfolio(companyId));
     }
 
-    @GetMapping("/deadlines")
-    public ResponseEntity<Object> getDeadlines(@RequestHeader("Authorization") String authHeader) {
+    @GetMapping("/schedules")
+    public ResponseEntity<Object> getSchedules(@RequestHeader("Authorization") String authHeader) {
         String companyId = extractCompanyId(authHeader);
-        return ResponseEntity.ok(dbService.getDeadlines(companyId));
+        return ResponseEntity.ok(dbService.getSchedules(companyId));
     }
 
     @GetMapping("/documents")

@@ -99,7 +99,7 @@ public class DBService {
                 .toList();
     }
 
-    public Object getDeadlines(String companyId) {
+    public Object getSchedules(String companyId) {
         return null;
     }
 
