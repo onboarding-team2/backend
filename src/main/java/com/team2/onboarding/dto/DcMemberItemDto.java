@@ -13,6 +13,9 @@ public class DcMemberItemDto {
     private String name;
     private String position;
     private LocalDate startDate;
+    private LocalDate joinDate;
+    private String hasIrpAccount;
+    private String defaultOption;
     private Long balance;
     private Boolean contributionPaid;
     private String status;

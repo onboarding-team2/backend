@@ -1,8 +1,10 @@
 package com.team2.onboarding.controller;
 
 import com.team2.onboarding.dto.DcMemberItemDto;
+import com.team2.onboarding.dto.EmployeeDetailResponseDto;
 import com.team2.onboarding.security.JwtTokenProvider;
 import com.team2.onboarding.service.DCService;
+import com.team2.onboarding.service.EmployeeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +17,7 @@ import java.util.List;
 public class DCController {
 
     private final DCService dcService;
+    private final EmployeeService employeeService;
     private final JwtTokenProvider jwtTokenProvider;
 
     @GetMapping("/dashboard")
@@ -27,6 +30,15 @@ public class DCController {
     public ResponseEntity<List<DcMemberItemDto>> getMembers(@RequestHeader("Authorization") String authHeader) {
         String companyId = extractCompanyId(authHeader);
         return ResponseEntity.ok(dcService.getMembers(companyId));
+    }
+
+    @GetMapping("/members/{id}")
+    public ResponseEntity<EmployeeDetailResponseDto> getMemberDetail(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable Long id
+    ) {
+        String companyId = extractCompanyId(authHeader);
+        return ResponseEntity.ok(employeeService.getEmployeeDetail(companyId, id));
     }
 
     @GetMapping("/deadlines")
