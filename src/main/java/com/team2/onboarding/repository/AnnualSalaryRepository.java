@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface AnnualSalaryRepository
-        extends JpaRepository<AnnualSalary, String> {
+        extends JpaRepository<AnnualSalary, Long> {
 
     List<AnnualSalary> findByEmployee_IdOrderByYearDesc(Long employeeId);
 }

@@ -13,8 +13,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
 
 @Configuration
 @RequiredArgsConstructor
@@ -27,11 +25,6 @@ public class DataInitializer {
     private final EmployeeRepository employeeRepository;
     private final EmployeeRetirementDcRepository employeeRetirementDcRepository;
     private final AnnualSalaryRepository annualSalaryRepository;
-    private final AnnualSalaryUpdateRepository annualSalaryUpdateRepository;
-    private final DefaultOptionHistoryRepository defaultOptionHistoryRepository;
-    private final IrpAccountRepository irpAccountRepository;
-    private final PurchaseOrderRepository purchaseOrderRepository;
-    private final MidWithdrawalRepository midWithdrawalRepository;
     private final FeePaymentRepository feePaymentRepository;
     private final ContributionRepository contributionRepository;
 
@@ -43,12 +36,40 @@ public class DataInitializer {
 
             int year = LocalDate.now().getYear();
 
+            // 7개 회사: DC×5 + DB×2, PaymentCycle - MONTHLY×3, QUARTERLY×3, YEARLY×1
             String[][] companyData = {
-                    {"1008100001", "테스트기업1", "김대표"},
-                    {"1008100002", "테스트기업2", "이대표"},
-                    {"1008100003", "테스트기업3", "박대표"},
+                    {"1008100001", "삼성전자",   "이재용"},
+                    {"1008100002", "현대자동차", "정의선"},
+                    {"1008100003", "카카오",     "홍은택"},
+                    {"1008100004", "네이버",     "최수연"},
+                    {"1008100005", "LG전자",     "조주완"},
+                    {"1008100006", "포스코",     "최정우"},
+                    {"1008100007", "SK하이닉스", "곽노정"},
+            };
+            PlanType[] planTypes = {
+                    PlanType.DC, PlanType.DC, PlanType.DC, PlanType.DC, PlanType.DC,
+                    PlanType.DB, PlanType.DB,
+            };
+            PaymentCycle[] cycles = {
+                    PaymentCycle.MONTHLY,
+                    PaymentCycle.QUARTERLY,
+                    PaymentCycle.YEARLY,
+                    PaymentCycle.MONTHLY,
+                    PaymentCycle.QUARTERLY,
+                    PaymentCycle.MONTHLY,
+                    PaymentCycle.QUARTERLY,
+            };
+            LocalDate[] contractDates = {
+                    LocalDate.of(2021, 1,  1),
+                    LocalDate.of(2021, 4,  1),
+                    LocalDate.of(2020, 7,  1),
+                    LocalDate.of(2022, 1,  1),
+                    LocalDate.of(2021, 10, 1),
+                    LocalDate.of(2020, 3,  1),
+                    LocalDate.of(2019, 6,  1),
             };
 
+            // 10명 직원: ei 0-1 임원, ei 2-7 사원, ei 8-9 퇴직자
             String[][] employeeData = {
                     {"이재원", "900101"},
                     {"김민준", "850615"},
@@ -56,155 +77,109 @@ public class DataInitializer {
                     {"이수진", "780920"},
                     {"최민혁", "801212"},
                     {"정유진", "950430"},
+                    {"한지민", "881205"},
+                    {"오세훈", "760312"},
+                    {"강다은", "930820"},
+                    {"윤서준", "971115"},
             };
 
+            // default_option: Y / N / null 모두 포함
+            String[] defaultOptions = {"Y", "N", "Y", "N", "Y", null, "N", "Y", "N", "N"};
+
             for (int ci = 0; ci < companyData.length; ci++) {
+
                 Company company = companyRepository.save(Company.builder()
                         .brn(companyData[ci][0])
                         .companyName(companyData[ci][1])
                         .representativeName(companyData[ci][2])
                         .password(passwordEncoder.encode("1234"))
-                        .planType(PlanType.DC)
+                        .planType(planTypes[ci])
                         .build());
 
+                PaymentCycle cycle = cycles[ci];
+                LocalDate contractDate = contractDates[ci];
+
                 CompanyRetirementDc crd = companyRetirementDcRepository.save(CompanyRetirementDc.builder()
-                        .companyAccount("ACC-DC-" + (ci + 1))
-                        .planType(PlanType.DC)
-                        .contractDate(LocalDate.of(2022, 3, 1))
-                        .feeDueDate(LocalDate.of(year, 12, 31))
-                        .paymentCycle(PaymentCycle.MONTHLY)
-                        .contributionDueDate(LocalDate.of(year, 6, 25))
+                        .companyAccount(String.format("ACC-%s-%03d", planTypes[ci].name(), ci + 1))
+                        .planType(planTypes[ci])
+                        .contractDate(contractDate)
+                        .paymentCycle(cycle)
                         .company(company)
                         .build());
 
-                // 부담금 납입 이력: 1~5월 납입완료, 6월 미납, 7~12월 예정
-                long baseContribution = 100_000_000L + (long) ci * 10_000_000L;
-                for (int month = 1; month <= 12; month++) {
-                    LocalDate dueDate = LocalDate.of(year, month, 25);
-                    boolean paid = month < 6;
-                    contributionRepository.save(Contribution.builder()
-                            .contributionAmount(baseContribution)
-                            .dueDate(dueDate)
-                            .paidDate(paid ? dueDate.minusDays(2) : null)
-                            .status(month < 6 ? "납입완료" : month == 6 ? "미납" : "예정")
-                            .cycle(PaymentCycle.MONTHLY)
-                            .companyRetirementDc(crd)
-                            .build());
-                }
+                // ── 부담금 납입 이력 ─────────────────────────────────
+                long baseContribution = 80_000_000L + (long) ci * 20_000_000L;
+                insertContributions(year, cycle, baseContribution, crd);
 
-                // 수수료 납입 이력: 운용관리 + 자산관리 각 6개월
+                // ── 수수료 납입 이력 (연도별 1건 × 2종류) ────────────
                 for (String feeType : new String[]{"운용관리", "자산관리"}) {
-                    long feeAmount = "운용관리".equals(feeType) ? 500_000L : 300_000L;
-                    for (int month = 1; month <= 6; month++) {
-                        LocalDate dueDate = LocalDate.of(year, month, 15);
-                        boolean paid = month <= 4;
+                    long feeAmount = "운용관리".equals(feeType)
+                            ? 400_000L + (long) ci * 50_000L
+                            : 250_000L + (long) ci * 30_000L;
+                    for (int y = year - 2; y <= year; y++) {
+                        boolean paid = y < year;
+                        LocalDate feeDue = contractDate.withYear(y);
                         feePaymentRepository.save(FeePayment.builder()
+                                .paymentYear(y)
+                                .dueDate(feeDue)
                                 .feeAmount(feeAmount)
                                 .feeType(feeType)
-                                .dueDate(dueDate)
-                                .paidDate(paid ? dueDate : null)
-                                .status(paid ? "납입완료" : month == 5 ? "미납" : "예정")
+                                .paidDate(paid ? feeDue.plusDays(5) : null)
+                                .status(paid ? "납입완료" : "미납")
                                 .companyRetirementDc(crd)
                                 .build());
                     }
                 }
 
-                // 직원 6명 생성
+                // ── 직원 10명 ─────────────────────────────────────────
                 for (int ei = 0; ei < employeeData.length; ei++) {
-                    String rrn = employeeData[ei][1] + String.format("%07d", (ci * 6 + ei + 1));
-                    LocalDate terminationDate = ei == 4
-                            ? LocalDate.of(year, 8, 31)
-                            : ei == 5 ? LocalDate.of(year, 7, 15) : null;
+                    int globalIdx = ci * 10 + ei;
+                    String rrn = employeeData[ei][1] + String.format("%07d", globalIdx + 1);
+
+                    boolean isTerminated = ei >= 8;
+                    LocalDate terminationDate = !isTerminated ? null
+                            : (ei == 8
+                                    ? LocalDate.of(year - 1, 8, 31)
+                                    : LocalDate.of(year - 1, 7, 15));
+
+                    EmployeeType empType = ei < 2 ? EmployeeType.EXECUTIVE : EmployeeType.EMPLOYEE;
 
                     Employee employee = employeeRepository.save(Employee.builder()
                             .name(employeeData[ei][0])
                             .rrn(rrn)
-                            .employeeType(ei == 3 ? EmployeeType.EXECUTIVE : EmployeeType.EMPLOYEE)
-                            .startDate(LocalDate.of(2020, 1, 1))
+                            .employeeType(empType)
+                            .startDate(LocalDate.of(2018 + ci, 3, 1))
                             .terminationDate(terminationDate)
                             .company(company)
                             .build());
 
-                    boolean hasTermination = ei == 4 || ei == 5;
-
-                    String defaultOption = (ei % 3 == 0) ? "Y" : "N";
-
-                    EmployeeRetirementDc erd = employeeRetirementDcRepository.save(EmployeeRetirementDc.builder()
-                            .employeeAccount("DC-" + (ci * 6 + ei + 1))
+                    employeeRetirementDcRepository.save(EmployeeRetirementDc.builder()
+                            .employeeAccount(String.format("DC-%04d", globalIdx + 1))
                             .accountType("DC")
-                            .joinDate(LocalDate.of(2022, 4, 1))
-                            .effectiveDate(LocalDate.of(2020, 1, 1))
-                            .defaultOption(defaultOption)
-                            .balance(20_000_000L + (long) (ei + 1) * 5_000_000L)
+                            .joinDate(LocalDate.of(2018 + ci, 4, 1))
+                            .effectiveDate(LocalDate.of(2018 + ci, 3, 1))
+                            .defaultOption(defaultOptions[ei])
+                            .hasIrpAccount(isTerminated ? "Y" : "N")
                             .employee(employee)
                             .companyRetirementDc(crd)
                             .build());
 
-                    // 연간 임금 총액
+                    // ── 연간 임금 총액 ────────────────────────────────
+                    long baseSalary = empType == EmployeeType.EXECUTIVE
+                            ? 100_000_000L + (long) (ei % 2) * 20_000_000L
+                            : 40_000_000L  + (long) (ei - 2) * 5_000_000L;
+
                     for (int y = year - 1; y <= year; y++) {
-                        AnnualSalary salary = annualSalaryRepository.save(AnnualSalary.builder()
+                        long salary = baseSalary + (long) (y - year + 1) * 3_000_000L;
+                        long minContribution = salary / 12;
+                        long contribution = minContribution + 200_000L * (ei + 1);
+
+                        annualSalaryRepository.save(AnnualSalary.builder()
                                 .year(String.valueOf(y))
-                                .salary(40_000_000L + (long) ei * 5_000_000L)
+                                .salary(salary)
+                                .minContribution(minContribution)
+                                .contribution(contribution)
                                 .employee(employee)
-                                .build());
-
-                        annualSalaryUpdateRepository.save(AnnualSalaryUpdate.builder()
-                                .targetYear(String.valueOf(y))
-                                .notifiedAt(LocalDateTime.of(y, 1, 10, 9, 0))
-                                .deadline(LocalDate.of(y, 3, 31))
-                                .status(y < year ? "갱신완료" : "갱신중")
-                                .completedAt(y < year ? LocalDateTime.of(y, 2, 15, 14, 0) : null)
-                                .annualSalary(salary)
-                                .build());
-                    }
-
-                    // 디폴트옵션 이력
-                    defaultOptionHistoryRepository.save(DefaultOptionHistory.builder()
-                            .selectedOption("Y".equals(defaultOption) ? "MMF" : null)
-                            .selectedDate("Y".equals(defaultOption) ? LocalDate.of(year - 1, 12, 1) : null)
-                            .status("Y".equals(defaultOption) ? "선정" : "미선정")
-                            .overdueDays("Y".equals(defaultOption) ? 0 : ei * 3)
-                            .employeeRetirementDc(erd)
-                            .build());
-
-                    // 매수예정 처리 (직원별 2건)
-                    purchaseOrderRepository.save(PurchaseOrder.builder()
-                            .productName("삼성 MMF")
-                            .productType("MMF")
-                            .instructionDate(LocalDate.of(year, 1, 15))
-                            .maturityDate(null)
-                            .status("완료")
-                            .employeeRetirementDc(erd)
-                            .build());
-
-                    purchaseOrderRepository.save(PurchaseOrder.builder()
-                            .productName("국채 채권형펀드")
-                            .productType("채권형펀드")
-                            .instructionDate(LocalDate.of(year, 5, 10))
-                            .maturityDate(LocalDate.of(year + 1, 5, 10))
-                            .status("미완료")
-                            .employeeRetirementDc(erd)
-                            .build());
-
-                    // 퇴직 예정자: IRP 계좌
-                    if (hasTermination) {
-                        irpAccountRepository.save(IrpAccount.builder()
-                                .openedDate(ei == 4 ? LocalDate.of(year, 5, 20) : null)
-                                .status(ei == 4 ? "개설완료" : "미완료")
-                                .terminationDate(terminationDate)
-                                .delayStatus(ei == 5 ? "확인필요" : null)
-                                .employeeRetirementDc(erd)
-                                .build());
-                    }
-
-                    // 중도인출 (직원당 1명)
-                    if (ei == 2) {
-                        midWithdrawalRepository.save(MidWithdrawal.builder()
-                                .requestDate(LocalDate.of(year, 3, 5))
-                                .status("완료")
-                                .amount(5_000_000L)
-                                .reason("주택 구입")
-                                .employeeRetirementDc(erd)
                                 .build());
                     }
                 }
@@ -212,5 +187,54 @@ public class DataInitializer {
 
             System.out.println("=== DC Mock Data Insert Complete ===");
         };
+    }
+
+    private void insertContributions(int year, PaymentCycle cycle, long baseAmount, CompanyRetirementDc crd) {
+        switch (cycle) {
+            case MONTHLY -> {
+                for (int month = 1; month <= 12; month++) {
+                    LocalDate dueDate = LocalDate.of(year, month, 25);
+                    String status = month < 6 ? "납입완료" : month == 6 ? "미납" : "예정";
+                    contributionRepository.save(Contribution.builder()
+                            .contributionAmount(baseAmount)
+                            .dueDate(dueDate)
+                            .paidDate(month < 6 ? dueDate.minusDays(2) : null)
+                            .status(status)
+                            .cycle(PaymentCycle.MONTHLY)
+                            .companyRetirementDc(crd)
+                            .build());
+                }
+            }
+            case QUARTERLY -> {
+                int[][] quarters = {{3, 31}, {6, 30}, {9, 30}, {12, 31}};
+                String[] statuses = {"납입완료", "미납", "예정", "예정"};
+                for (int q = 0; q < 4; q++) {
+                    LocalDate dueDate = LocalDate.of(year, quarters[q][0], quarters[q][1]);
+                    contributionRepository.save(Contribution.builder()
+                            .contributionAmount(baseAmount * 3)
+                            .dueDate(dueDate)
+                            .paidDate("납입완료".equals(statuses[q]) ? dueDate.minusDays(3) : null)
+                            .status(statuses[q])
+                            .cycle(PaymentCycle.QUARTERLY)
+                            .companyRetirementDc(crd)
+                            .build());
+                }
+            }
+            case YEARLY -> {
+                String[] statuses = {"납입완료", "미납", "예정"};
+                for (int i = 0; i < 3; i++) {
+                    int y = year - 2 + i;
+                    LocalDate dueDate = LocalDate.of(y, 12, 31);
+                    contributionRepository.save(Contribution.builder()
+                            .contributionAmount(baseAmount * 12)
+                            .dueDate(dueDate)
+                            .paidDate("납입완료".equals(statuses[i]) ? dueDate.minusDays(10) : null)
+                            .status(statuses[i])
+                            .cycle(PaymentCycle.YEARLY)
+                            .companyRetirementDc(crd)
+                            .build());
+                }
+            }
+        }
     }
 }

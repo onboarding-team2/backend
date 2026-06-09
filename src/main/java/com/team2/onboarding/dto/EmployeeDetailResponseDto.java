@@ -94,11 +94,15 @@ public class EmployeeDetailResponseDto {
     public static class AnnualSalaryDto {
         private String year;
         private Long salary;
+        private Long minContribution;
+        private Long contribution;
 
         @Builder
-        private AnnualSalaryDto(String year, Long salary) {
+        private AnnualSalaryDto(String year, Long salary, Long minContribution, Long contribution) {
             this.year = year;
             this.salary = salary;
+            this.minContribution = minContribution;
+            this.contribution = contribution;
         }
     }
 }
