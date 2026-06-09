@@ -45,10 +45,13 @@ public class ScheduleDcService {
         return ScheduleDcResponseDto.of(schedules);
     }
 
-    public ScheduleDcDetailResponseDto getScheduleDetail(Long scheduleId) {
+    public ScheduleDcDetailResponseDto getScheduleDetail(Long scheduleId, Long companyId) {
         ScheduleDc schedule = scheduleDcRepository.findById(scheduleId)
                 .orElseThrow(() -> new IllegalArgumentException("일정을 찾을 수 없습니다. id=" + scheduleId));
-        List<Employee> employees = parseTargetEmployees(schedule.getTargetEmployees());
+        if (!schedule.getCompany().getId().equals(companyId)) {
+            throw new IllegalArgumentException("해당 일정에 대한 접근 권한이 없습니다.");
+        }
+        List<Employee> employees = parseTargetEmployees(schedule.getTargetEmployees(), companyId);
         return ScheduleDcDetailResponseDto.from(schedule, employees);
     }
 
@@ -57,38 +60,52 @@ public class ScheduleDcService {
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new IllegalArgumentException("기업을 찾을 수 없습니다. id=" + companyId));
 
+        List<Long> employeeIds = request.getEmployeeIds();
+        if (employeeIds != null && !employeeIds.isEmpty()) {
+            List<Employee> found = employeeRepository.findByIdInAndCompany_Id(employeeIds, companyId);
+            if (found.size() != employeeIds.size()) {
+                throw new IllegalArgumentException("일부 가입자가 해당 기업에 속하지 않습니다.");
+            }
+        }
+
         ScheduleDc schedule = ScheduleDc.builder()
                 .title(request.getTitle())
                 .dueDate(request.getDueDate())
                 .description(request.getDescription())
                 .status("예정")
                 .createdDate(LocalDate.now())
-                .targetEmployees(serializeEmployeeIds(request.getEmployeeIds()))
+                .targetEmployees(serializeEmployeeIds(employeeIds))
                 .company(company)
                 .build();
 
         ScheduleDc saved = scheduleDcRepository.save(schedule);
-        List<Employee> employees = parseTargetEmployees(saved.getTargetEmployees());
+        List<Employee> employees = parseTargetEmployees(saved.getTargetEmployees(), companyId);
         return ScheduleDcDetailResponseDto.from(saved, employees);
     }
 
     @Transactional
-    public void deleteSchedule(Long scheduleId) {
+    public void deleteSchedule(Long scheduleId, Long companyId) {
         ScheduleDc schedule = scheduleDcRepository.findById(scheduleId)
                 .orElseThrow(() -> new IllegalArgumentException("일정을 찾을 수 없습니다. id=" + scheduleId));
+        if (!schedule.getCompany().getId().equals(companyId)) {
+            throw new IllegalArgumentException("해당 일정에 대한 접근 권한이 없습니다.");
+        }
         scheduleDcRepository.delete(schedule);
     }
 
     @Transactional
-    public ScheduleDcDetailResponseDto completeSchedule(Long scheduleId) {
+    public ScheduleDcDetailResponseDto completeSchedule(Long scheduleId, Long companyId) {
         ScheduleDc schedule = scheduleDcRepository.findById(scheduleId)
                 .orElseThrow(() -> new IllegalArgumentException("일정을 찾을 수 없습니다. id=" + scheduleId));
+        if (!schedule.getCompany().getId().equals(companyId)) {
+            throw new IllegalArgumentException("해당 일정에 대한 접근 권한이 없습니다.");
+        }
         schedule.complete();
-        List<Employee> employees = parseTargetEmployees(schedule.getTargetEmployees());
+        List<Employee> employees = parseTargetEmployees(schedule.getTargetEmployees(), companyId);
         return ScheduleDcDetailResponseDto.from(schedule, employees);
     }
 
-    private List<Employee> parseTargetEmployees(String targetEmployeesJson) {
+    private List<Employee> parseTargetEmployees(String targetEmployeesJson, Long companyId) {
         if (targetEmployeesJson == null || targetEmployeesJson.isBlank()) {
             return List.of();
         }
@@ -97,7 +114,7 @@ public class ScheduleDcService {
             if (ids == null || ids.isEmpty()) {
                 return List.of();
             }
-            return employeeRepository.findAllById(ids);
+            return employeeRepository.findByIdInAndCompany_Id(ids, companyId);
         } catch (Exception e) {
             return List.of();
         }
