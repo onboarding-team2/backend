@@ -37,6 +37,9 @@ public class ScheduleDc {
     @Column(name = "created_date", nullable = false)
     private LocalDate createdDate;
 
+    @Column(name = "target_employees", columnDefinition = "JSON DEFAULT (JSON_ARRAY())")
+    private String targetEmployees;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
@@ -44,12 +47,13 @@ public class ScheduleDc {
 
     @Builder
     private ScheduleDc(LocalDate dueDate, String title, String description,
-            String status, LocalDate createdDate, Company company) {
+            String status, LocalDate createdDate, String targetEmployees, Company company) {
         this.dueDate = dueDate;
         this.title = title;
         this.description = description;
         this.status = status;
         this.createdDate = createdDate != null ? createdDate : LocalDate.now();
+        this.targetEmployees = targetEmployees;
         this.company = company;
     }
 }
