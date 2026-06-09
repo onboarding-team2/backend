@@ -15,7 +15,7 @@ import java.time.LocalDate;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "schedules_db")
-@Check(name = "chk_db_schedule_status", constraints = "status IN ('예정', '진행중', '완료')")
+@Check(name = "chk_db_schedule_status", constraints = "status IN ('ACTIVE', 'DONE', 'OVERDUE')")
 public class ScheduleDb {
 
     @Id
@@ -58,6 +58,6 @@ public class ScheduleDb {
     }
 
     public void complete() {
-        this.status = "완료";
+        this.status = "DONE";
     }
 }

@@ -46,7 +46,7 @@ public class ScheduleDbResponseDto {
                 .map(s -> {
                     long days = ChronoUnit.DAYS.between(today, s.getDueDate());
                     String dDay;
-                    if ("완료".equals(s.getStatus())) {
+                    if ("DONE".equals(s.getStatus())) {
                         dDay = "완료";
                     } else if (days < 0) {
                         dDay = "D+" + Math.abs(days);
@@ -67,11 +67,11 @@ public class ScheduleDbResponseDto {
                 .toList();
 
         long totalCount = items.stream()
-                .filter(i -> !"완료".equals(i.getStatus()))
+                .filter(i -> !"DONE".equals(i.getStatus()))
                 .count();
 
         long imminentCount = scheduleList.stream()
-                .filter(s -> !"완료".equals(s.getStatus()))
+                .filter(s -> !"DONE".equals(s.getStatus()))
                 .filter(s -> {
                     long days = ChronoUnit.DAYS.between(today, s.getDueDate());
                     return days >= 0 && days <= 14;
@@ -79,7 +79,7 @@ public class ScheduleDbResponseDto {
                 .count();
 
         long overdueCount = scheduleList.stream()
-                .filter(s -> !"완료".equals(s.getStatus()))
+                .filter(s -> !"DONE".equals(s.getStatus()))
                 .filter(s -> s.getDueDate().isBefore(today))
                 .count();
 
