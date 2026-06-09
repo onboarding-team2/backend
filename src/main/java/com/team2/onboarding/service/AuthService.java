@@ -33,6 +33,7 @@ public class AuthService {
         }
 
         String token = jwtTokenProvider.createToken(company.getId().toString());
+
         return new LoginResponseDto(token, company.getPlanType());
     }
 
