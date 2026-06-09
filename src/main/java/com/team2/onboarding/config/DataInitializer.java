@@ -40,8 +40,26 @@ public class DataInitializer {
     private final AnnualSalaryDbRepository annualSalaryDbRepository;
     private final FeePaymentDbRepository feePaymentDbRepository;
     private final ReserveDbRepository reserveDbRepository;
-    private final InvestmentProductMasterRepository investmentProductMasterRepository;  // 마스터
-    private final InvestmentProductDbRepository investmentProductDbRepository;    // 매수 상품
+    private final InvestmentProductMasterRepository investmentProductMasterRepository;
+    private final InvestmentProductDbRepository investmentProductDbRepository;
+
+    // ── 직원 이름/생년 풀 (40명) ──────────────────────────────────
+    private static final String[][] EMPLOYEE_POOL = {
+            {"이재원", "900101"}, {"김민준", "850615"}, {"박지수", "920303"},
+            {"이수진", "780920"}, {"최민혁", "801212"}, {"정유진", "950430"},
+            {"한지민", "881205"}, {"오세훈", "760312"}, {"강다은", "930820"},
+            {"윤서준", "971115"}, {"서하준", "880407"}, {"조은혜", "910225"},
+            {"임도현", "860918"}, {"신지원", "940612"}, {"류성민", "830503"},
+            {"고은서", "960817"}, {"배준혁", "790124"}, {"전수빈", "870930"},
+            {"황민서", "920505"}, {"문지훈", "850716"}, {"장서연", "990214"},
+            {"남기현", "810828"}, {"노유진", "930611"}, {"심재호", "880302"},
+            {"안소희", "910925"}, {"권태양", "820414"}, {"허나연", "950708"},
+            {"방준서", "871020"}, {"유지호", "960319"}, {"석민아", "840607"},
+            {"탁지현", "920113"}, {"봉우현", "870522"}, {"원서진", "940830"},
+            {"도현우", "800215"}, {"차혜리", "910704"}, {"모지수", "850311"},
+            {"소재현", "970615"}, {"표민준", "830928"}, {"지예진", "900817"},
+            {"견서준", "860203"},
+    };
 
     @Bean
     @Transactional
@@ -50,97 +68,109 @@ public class DataInitializer {
             if (companyRepository.count() > 0) return;
 
             int year = LocalDate.now().getYear();
-
-            // ── 0. 운용상품 마스터 (전역 데이터, 회사 루프 전에 1번만) ──
             List<InvestmentProductMaster> productMasters = createProductMasters();
 
-            // 7개 회사: DC×5 + DB×2
-            String[][] companyData = {
+            // ═══════════════════════════════════════════════════════
+            // DC 회사 (5개) - 기존 로직 유지
+            // ═══════════════════════════════════════════════════════
+            String[][] dcCompanyData = {
                     {"1008100001", "삼성전자",   "이재용"},
                     {"1008100002", "현대자동차", "정의선"},
                     {"1008100003", "카카오",     "홍은택"},
                     {"1008100004", "네이버",     "최수연"},
                     {"1008100005", "LG전자",     "조주완"},
-                    {"1008100006", "포스코",     "최정우"},      // DB형 - 추가납입필요
-                    {"1008100007", "SK하이닉스", "곽노정"},     // DB형 - 적정
             };
-            PlanType[] planTypes = {
-                    PlanType.DC, PlanType.DC, PlanType.DC, PlanType.DC, PlanType.DC,
-                    PlanType.DB, PlanType.DB,
+            PaymentCycle[] dcCycles = {
+                    PaymentCycle.MONTHLY, PaymentCycle.QUARTERLY, PaymentCycle.YEARLY,
+                    PaymentCycle.MONTHLY, PaymentCycle.QUARTERLY,
             };
-            PaymentCycle[] cycles = {
-                    PaymentCycle.MONTHLY,
-                    PaymentCycle.QUARTERLY,
-                    PaymentCycle.YEARLY,
-                    PaymentCycle.MONTHLY,
-                    PaymentCycle.QUARTERLY,
-                    null, null,  // DB형은 사용 안 함
-            };
-            LocalDate[] contractDates = {
+            LocalDate[] dcContractDates = {
                     LocalDate.of(2021, 1,  1),
                     LocalDate.of(2021, 4,  1),
                     LocalDate.of(2020, 7,  1),
                     LocalDate.of(2022, 1,  1),
                     LocalDate.of(2021, 10, 1),
-                    LocalDate.of(2020, 3,  1),
-                    LocalDate.of(2019, 6,  1),
             };
 
-            String[][] employeeData = {
-                    {"이재원", "900101"},
-                    {"김민준", "850615"},
-                    {"박지수", "920303"},
-                    {"이수진", "780920"},
-                    {"최민혁", "801212"},
-                    {"정유진", "950430"},
-                    {"한지민", "881205"},
-                    {"오세훈", "760312"},
-                    {"강다은", "930820"},
+            String[][] dcEmployeeData = {
+                    {"이재원", "900101"}, {"김민준", "850615"}, {"박지수", "920303"},
+                    {"이수진", "780920"}, {"최민혁", "801212"}, {"정유진", "950430"},
+                    {"한지민", "881205"}, {"오세훈", "760312"}, {"강다은", "930820"},
                     {"윤서준", "971115"},
             };
-
-            // ── 회사별 default_option Y/N 비중 (DC 전용) ──
-            //   직원 10명 중 앞에서부터 Y, 나머지 N → 회사마다 Y 개수 차등
-            //   ci=0: Y2/N8, ci=1: Y4/N6, ci=2: Y6/N4, ci=3: Y8/N2, ci=4: Y3/N7
             String[][] defaultOptionsByCompany = {
-                    {"Y", "Y", "N", "N", "N", "N", "N", "N", "N", "N"}, // 삼성전자  Y2
-                    {"Y", "Y", "Y", "Y", "N", "N", "N", "N", "N", "N"}, // 현대자동차 Y4
-                    {"Y", "Y", "Y", "Y", "Y", "Y", "N", "N", "N", "N"}, // 카카오    Y6
-                    {"Y", "Y", "Y", "Y", "Y", "Y", "Y", "Y", "N", "N"}, // 네이버    Y8
-                    {"Y", "Y", "Y", "N", "N", "N", "N", "N", "N", "N"}, // LG전자    Y3
+                    {"Y", "Y", "N", "N", "N", "N", "N", "N", "N", "N"},
+                    {"Y", "Y", "Y", "Y", "N", "N", "N", "N", "N", "N"},
+                    {"Y", "Y", "Y", "Y", "Y", "Y", "N", "N", "N", "N"},
+                    {"Y", "Y", "Y", "Y", "Y", "Y", "Y", "Y", "N", "N"},
+                    {"Y", "Y", "Y", "N", "N", "N", "N", "N", "N", "N"},
+            };
+            String[][] dcHasIrpByCompany = {
+                    {"Y", "N", "N", "N", "N", "N", "N", "N", "Y", "Y"},
+                    {"Y", "Y", "Y", "N", "N", "N", "N", "N", "Y", "Y"},
+                    {"Y", "Y", "N", "N", "N", "N", "N", "N", "Y", "Y"},
+                    {"Y", "Y", "Y", "Y", "Y", "N", "N", "N", "Y", "Y"},
+                    {"Y", "Y", "Y", "Y", "N", "N", "N", "N", "Y", "Y"},
             };
 
-            // ── 회사별 has_irp_account Y/N 비중 (DC/DB 공통) ──
-            //   ei 8,9는 퇴사자라 항상 Y로 덮어씀 → 아래는 재직자(0~7) 기준 패턴
-            //   ci=0: 재직Y1, ci=1: Y3, ci=2: Y2, ci=3: Y5, ci=4: Y4 (DC)
-            //   ci=5: Y6, ci=6: Y2 (DB)
-            String[][] hasIrpByCompany = {
-                    {"Y", "N", "N", "N", "N", "N", "N", "N", "Y", "Y"}, // 삼성전자  재직Y1
-                    {"Y", "Y", "Y", "N", "N", "N", "N", "N", "Y", "Y"}, // 현대자동차 재직Y3
-                    {"Y", "Y", "N", "N", "N", "N", "N", "N", "Y", "Y"}, // 카카오    재직Y2
-                    {"Y", "Y", "Y", "Y", "Y", "N", "N", "N", "Y", "Y"}, // 네이버    재직Y5
-                    {"Y", "Y", "Y", "Y", "N", "N", "N", "N", "Y", "Y"}, // LG전자    재직Y4
-                    {"Y", "Y", "Y", "Y", "Y", "Y", "N", "N", "Y", "Y"}, // 포스코    재직Y6
-                    {"Y", "Y", "N", "N", "N", "N", "N", "N", "Y", "Y"}, // SK하이닉스 재직Y2
-            };
-
-            for (int ci = 0; ci < companyData.length; ci++) {
-
+            for (int ci = 0; ci < dcCompanyData.length; ci++) {
                 Company company = companyRepository.save(Company.builder()
-                        .brn(companyData[ci][0])
-                        .companyName(companyData[ci][1])
-                        .representativeName(companyData[ci][2])
+                        .brn(dcCompanyData[ci][0])
+                        .companyName(dcCompanyData[ci][1])
+                        .representativeName(dcCompanyData[ci][2])
                         .password(passwordEncoder.encode("1234"))
-                        .planType(planTypes[ci])
+                        .planType(PlanType.DC)
                         .build());
 
-                if (planTypes[ci] == PlanType.DC) {
-                    insertDcData(ci, company, contractDates[ci], cycles[ci], year,
-                            employeeData, defaultOptionsByCompany[ci], hasIrpByCompany[ci]);
-                } else {
-                    insertDbData(ci, company, contractDates[ci], year,
-                            employeeData, productMasters, hasIrpByCompany[ci]);
-                }
+                insertDcData(ci, company, dcContractDates[ci], dcCycles[ci], year,
+                        dcEmployeeData, defaultOptionsByCompany[ci], dcHasIrpByCompany[ci]);
+            }
+
+            // ═══════════════════════════════════════════════════════
+            // DB 회사 (8개)
+            // {brn, name, rep, contractYear, M, D, empCount, targetRatio, irpRatio, portfolioType, feeBase만원}
+            // targetRatio → 재정 상태:
+            //   ≥100% : 적정   (SK하이닉스 102, 한화에어로스페이스 106, GS칼텍스 101)
+            //   95~99%: 주의   (현대제철 96, 두산에너빌리티 97)
+            //   <95%  : 추가납입필요 (포스코 83, 롯데케미칼 88, OCI 91)
+            // ═══════════════════════════════════════════════════════
+            Object[][] dbConfigs = {
+                //  brn            name              rep       cY    cM cD  emp  ratio  irp  port  fee
+                {"1008100006", "포스코",             "최정우", 2020,  3, 1,  25,  83.0, 0.60,  3,  40},
+                {"1008100007", "SK하이닉스",         "곽노정", 2019,  6, 1,  28, 102.0, 0.40,  1,  55},
+                {"1008100008", "현대제철",           "안동일", 2018,  9, 1,  22,  96.0, 0.50,  0,  45},
+                {"1008100009", "롯데케미칼",         "김교현", 2021,  2, 1,  24,  88.0, 0.30,  2,  38},
+                {"1008100010", "한화에어로스페이스", "손재일", 2017,  5, 1,  30, 106.0, 0.70,  2,  70},
+                {"1008100011", "두산에너빌리티",     "정연인", 2022,  1, 1,  20,  97.0, 0.50,  0,  32},
+                {"1008100012", "GS칼텍스",           "허세홍", 2019,  3, 1,  26, 101.0, 0.40,  1,  50},
+                {"1008100013", "OCI",               "이우현", 2020,  7, 1,  23,  91.0, 0.30,  3,  35},
+            };
+
+            // DC 5개 × 10명 = 50부터 DB 직원 전역 인덱스 시작
+            int dbGlobalIdx = 50;
+
+            for (int dbi = 0; dbi < dbConfigs.length; dbi++) {
+                Object[] cfg = dbConfigs[dbi];
+                LocalDate contractDate = LocalDate.of((int) cfg[3], (int) cfg[4], (int) cfg[5]);
+
+                Company company = companyRepository.save(Company.builder()
+                        .brn((String) cfg[0])
+                        .companyName((String) cfg[1])
+                        .representativeName((String) cfg[2])
+                        .password(passwordEncoder.encode("1234"))
+                        .planType(PlanType.DB)
+                        .build());
+
+                insertDbData(
+                        dbi, company, contractDate, year, productMasters,
+                        (int)    cfg[6],   // empCount
+                        (double) cfg[7],   // targetFundingRatio
+                        (double) cfg[8],   // irpRatio
+                        (int)    cfg[9],   // portfolioType
+                        (int)    cfg[10],  // feeBase (만원 단위)
+                        dbGlobalIdx
+                );
+                dbGlobalIdx += (int) cfg[6];
             }
 
             System.out.println("=== Mock Data Insert Complete ===");
@@ -163,11 +193,9 @@ public class DataInitializer {
                 .company(company)
                 .build());
 
-        // 부담금
         long baseContribution = 80_000_000L + (long) ci * 20_000_000L;
         insertContributions(year, cycle, baseContribution, crd);
 
-        // 수수료
         for (String feeType : new String[]{"운용관리", "자산관리"}) {
             long feeAmount = "운용관리".equals(feeType)
                     ? 400_000L + (long) ci * 50_000L
@@ -187,11 +215,9 @@ public class DataInitializer {
             }
         }
 
-        // 직원 10명
         for (int ei = 0; ei < employeeData.length; ei++) {
             int globalIdx = ci * 10 + ei;
-            Employee employee = saveEmployee(ci, ei, globalIdx, company, employeeData, year);
-            boolean isTerminated = ei >= 8;
+            Employee employee = saveDcEmployee(ci, ei, globalIdx, company, employeeData, year);
 
             employeeRetirementDcRepository.save(EmployeeRetirementDc.builder()
                     .employeeAccount(String.format("DC-%04d", globalIdx + 1))
@@ -204,7 +230,6 @@ public class DataInitializer {
                     .companyRetirementDc(crd)
                     .build());
 
-            // 연간임금 (DC: salary + min_contribution + contribution)
             long baseSalary = baseSalaryByType(employee.getEmployeeType(), ei);
             for (int y = year - 1; y <= year; y++) {
                 long salary = baseSalary + (long) (y - year + 1) * 3_000_000L;
@@ -225,24 +250,25 @@ public class DataInitializer {
     // ═════════════════════════════════════════════════════════════
     // DB형 데이터
     // ═════════════════════════════════════════════════════════════
-    private void insertDbData(int ci, Company company, LocalDate contractDate, int year,
-                              String[][] employeeData,
+    private void insertDbData(int dbi, Company company, LocalDate contractDate, int year,
                               List<InvestmentProductMaster> productMasters,
-                              String[] hasIrpOptions) {
+                              int empCount, double targetFundingRatio,
+                              double irpRatio, int portfolioType,
+                              int feeBaseMan, int globalIdxStart) {
 
         CompanyRetirementDb crdb = companyRetirementDbRepository.save(CompanyRetirementDb.builder()
-                .companyAccount(String.format("ACC-DB-%03d", ci + 1))
+                .companyAccount(String.format("ACC-DB-%03d", dbi + 1))
                 .planType(PlanType.DB)
                 .contractDate(contractDate)
                 .fiscalMonth(12)
                 .company(company)
                 .build());
 
-        // 수수료 납입 이력 (DB)
+        // 수수료 납입 이력
         for (String feeType : new String[]{"운용관리", "자산관리"}) {
             long feeAmount = "운용관리".equals(feeType)
-                    ? 400_000L + (long) ci * 50_000L
-                    : 250_000L + (long) ci * 30_000L;
+                    ? feeBaseMan * 10_000L
+                    : (long) Math.round(feeBaseMan * 10_000L * 0.6);
             for (int y = year - 2; y <= year; y++) {
                 boolean paid = y < year;
                 LocalDate feeDue = contractDate.withYear(y);
@@ -258,29 +284,59 @@ public class DataInitializer {
             }
         }
 
-        // 직원 10명 + 추계액 합산
+        // 근속 패턴: ei % 5 별로 입사일 결정 (다양한 재직기간)
+        int[] tenureYears = {12, 8, 5, 3, 1};
         LocalDate baseDate = LocalDate.of(year - 1, 12, 31);  // 직전 결산일
         long totalBenefitObligation = 0L;
+        int irpThreshold = (int) Math.round(empCount * irpRatio);
+        int terminatedStart = empCount - 2;  // 마지막 2명 퇴사자
 
-        for (int ei = 0; ei < employeeData.length; ei++) {
-            int globalIdx = ci * 10 + ei;
-            Employee employee = saveEmployee(ci, ei, globalIdx, company, employeeData, year);
+        for (int ei = 0; ei < empCount; ei++) {
+            int globalIdx = globalIdxStart + ei;
+            String[] emp = EMPLOYEE_POOL[globalIdx % EMPLOYEE_POOL.length];
+
+            // 근속 기간에 따라 입사일 다양화
+            int tenure = tenureYears[ei % 5];
+            LocalDate startDate = contractDate.minusYears(tenure).withDayOfMonth(1);
+
+            boolean isTerminated = ei >= terminatedStart;
+            LocalDate terminationDate = isTerminated
+                    ? (ei == terminatedStart
+                            ? LocalDate.of(year - 1, 9, 30)
+                            : LocalDate.of(year - 1, 8, 15))
+                    : null;
+
+            EmployeeType empType = ei < 2 ? EmployeeType.EXECUTIVE : EmployeeType.EMPLOYEE;
+
+            Employee employee = employeeRepository.save(Employee.builder()
+                    .name(emp[0])
+                    .rrn(emp[1] + String.format("%07d", globalIdx + 1))
+                    .employeeType(empType)
+                    .startDate(startDate)
+                    .terminationDate(terminationDate)
+                    .company(company)
+                    .build());
+
+            String hasIrp = (ei < irpThreshold || isTerminated) ? "Y" : "N";
 
             employeeRetirementDbRepository.save(EmployeeRetirementDb.builder()
                     .accountType("DB")
                     .employeeAccount(String.format("DB-%04d", globalIdx + 1))
-                    .joinDate(LocalDate.of(2018 + ci, 4, 1))
-                    .hasIrpAccount(hasIrpOptions[ei])
+                    .joinDate(startDate)
+                    .hasIrpAccount(hasIrp)
                     .employee(employee)
                     .companyRetirementDb(crdb)
                     .build());
 
-            // 연간임금 (DB: salary만)
-            long baseSalary = baseSalaryByType(employee.getEmployeeType(), ei);
+            // 연봉: 직책 + 근속 가산
+            long baseSalary = empType == EmployeeType.EXECUTIVE
+                    ? 90_000_000L + (long) tenure * 2_000_000L
+                    : 35_000_000L + (long) tenure * 1_500_000L;
+
             long currentYearSalary = 0L;
             for (int y = year - 1; y <= year; y++) {
-                long salary = baseSalary + (long) (y - year + 1) * 3_000_000L;
-                if (y == year - 1) currentYearSalary = salary;  // 결산 기준 연봉
+                long salary = baseSalary + (long) (y - (year - 1)) * 3_000_000L;
+                if (y == year - 1) currentYearSalary = salary;
 
                 annualSalaryDbRepository.save(AnnualSalaryDb.builder()
                         .year(String.valueOf(y))
@@ -289,8 +345,8 @@ public class DataInitializer {
                         .build());
             }
 
-            // 추계액 계산: salary × 30/365 × 재직일수/365
-            long serviceDays = ChronoUnit.DAYS.between(employee.getStartDate(), baseDate);
+            // 추계액 = 평균임금(30일분) × 재직일수/365
+            long serviceDays = ChronoUnit.DAYS.between(startDate, baseDate);
             if (serviceDays > 0) {
                 long estimatedBenefit = Math.round(
                         currentYearSalary * 30.0 / 365.0 * serviceDays / 365.0
@@ -299,117 +355,81 @@ public class DataInitializer {
             }
         }
 
-        // 운용상품 매수 (회사별 패턴)
-        long fundedAmount = insertInvestmentProducts(ci, crdb, productMasters);
-
-        // 재정검증 (reserve_db)
+        long fundedAmount = insertInvestmentProducts(
+                portfolioType, crdb, productMasters, totalBenefitObligation, targetFundingRatio);
         insertReserve(crdb, baseDate, totalBenefitObligation, fundedAmount);
     }
 
     // ─────────────────────────────────────────────────────────────
-    // 공통 유틸
+    // 운용상품 매수 — 포트폴리오 유형별 상품 구성 + targetFundingRatio 스케일링
     // ─────────────────────────────────────────────────────────────
-    private Employee saveEmployee(int ci, int ei, int globalIdx, Company company,
-                                  String[][] employeeData, int year) {
-        String rrn = employeeData[ei][1] + String.format("%07d", globalIdx + 1);
-        boolean isTerminated = ei >= 8;
-        LocalDate terminationDate = !isTerminated ? null
-                : (ei == 8 ? LocalDate.of(year - 1, 8, 31) : LocalDate.of(year - 1, 7, 15));
-        EmployeeType empType = ei < 2 ? EmployeeType.EXECUTIVE : EmployeeType.EMPLOYEE;
-
-        return employeeRepository.save(Employee.builder()
-                .name(employeeData[ei][0])
-                .rrn(rrn)
-                .employeeType(empType)
-                .startDate(LocalDate.of(2018 + ci, 3, 1))
-                .terminationDate(terminationDate)
-                .company(company)
-                .build());
-    }
-
-    private long baseSalaryByType(EmployeeType empType, int ei) {
-        return empType == EmployeeType.EXECUTIVE
-                ? 100_000_000L + (long) (ei % 2) * 20_000_000L
-                : 40_000_000L + (long) (ei - 2) * 5_000_000L;
-    }
-
-    // ─────────────────────────────────────────────────────────────
-    // 운용상품 마스터 (전역)
-    // ─────────────────────────────────────────────────────────────
-    private List<InvestmentProductMaster> createProductMasters() {
-        Object[][] data = {
-                // {productProvider, category, isPrincipalGuaranteed, annualReturnRate}
-                {"IBK기업은행",   "정기예금",       true,  "3.50"},
-                {"KB국민은행",    "정기예금",       true,  "3.20"},
-                {"신한은행",      "정기예금",       true,  "3.00"},
-                {"삼성생명",      "이율보증형보험",  true,  "2.80"},
-                {"한화생명",      "이율보증형보험",  true,  "2.50"},
-                {"미래에셋증권",  "ELB 및 ELD",    true,  "4.20"},
-                {"NH투자증권",    "ELB 및 ELD",    true,  "4.50"},
-                {"KB증권",        "ELB 및 ELD",    true,  "3.80"},
-                {"한국투자증권",  "ELB 및 ELD",    true,  "4.00"},
+    private long insertInvestmentProducts(int portfolioType, CompanyRetirementDb crdb,
+                                          List<InvestmentProductMaster> masters,
+                                          long totalBenefitObligation,
+                                          double targetFundingRatio) {
+        // {masterIdx, 비율(%), maturityMonthsOffset, status}
+        Object[][] portfolio = switch (portfolioType) {
+            case 0 -> new Object[][]{ // 보수형 — 예금·보험 위주
+                    {0, 35.0,  6, "운용중"},  // IBK 정기예금
+                    {1, 30.0, 10, "운용중"},  // KB 정기예금
+                    {2, 25.0,  8, "운용중"},  // 신한은행 정기예금
+                    {3, 10.0, 14, "운용중"},  // 삼성생명 이율보증형
+            };
+            case 1 -> new Object[][]{ // 균형형 — 예금 + ELB 혼합
+                    {0, 25.0,  4, "운용중"},  // IBK 정기예금
+                    {1, 20.0,  8, "운용중"},  // KB 정기예금
+                    {3, 15.0, 12, "운용중"},  // 삼성생명
+                    {4, 10.0, 16, "운용중"},  // 한화생명
+                    {5, 18.0,  6, "운용중"},  // 미래에셋 ELB
+                    {6, 12.0,  3, "운용중"},  // NH투자 ELB
+            };
+            case 2 -> new Object[][]{ // 성장형 — ELB 위주
+                    {0, 20.0,  4, "운용중"},  // IBK 정기예금
+                    {2, 10.0,  8, "운용중"},  // 신한은행
+                    {5, 25.0,  6, "운용중"},  // 미래에셋 ELB
+                    {6, 25.0,  9, "운용중"},  // NH투자 ELB
+                    {7, 20.0,  5, "운용중"},  // KB증권 ELB
+            };
+            default -> new Object[][]{ // 혼합형 — 만기완료 포함
+                    {0, 20.0,  1, "운용중"},   // IBK 정기예금, 만기 임박
+                    {1, 17.5,  2, "운용중"},   // KB 정기예금
+                    {3, 22.5,  6, "운용중"},   // 삼성생명
+                    {5, 15.0, 12, "운용중"},   // 미래에셋 ELB
+                    {7, 10.0,  3, "운용중"},   // KB증권 ELB
+                    {2, 15.0, -12, "만기완료"}, // 신한은행, 작년 만기
+            };
         };
-        List<InvestmentProductMaster> result = new ArrayList<>();
-        for (Object[] row : data) {
-            result.add(investmentProductMasterRepository.save(InvestmentProductMaster.builder()
-                    .productProvider((String) row[0])
-                    .productCategory((String) row[1])
-                    .isPrincipalGuaranteed((Boolean) row[2])
-                    .annualReturnRate(new BigDecimal((String) row[3]))
-                    .build()));
-        }
-        return result;
-    }
 
-    // ─────────────────────────────────────────────────────────────
-    // 회사별 운용상품 매수
-    //   ci=5 (포스코)     → 부족 상태 (추가납입필요)
-    //   ci=6 (SK하이닉스) → 적정 상태
-    // ─────────────────────────────────────────────────────────────
-    private long insertInvestmentProducts(int ci, CompanyRetirementDb crdb,
-                                          List<InvestmentProductMaster> masters) {
-        // {masterIdx, principal, maturityMonthsOffset, status}
-        Object[][] portfolio = (ci == 5)
-                ? new Object[][]{
-                {0, 800_000_000L,    1, "운용중"},     // IBK A 8억, 만기 임박
-                {1, 700_000_000L,    2, "운용중"},     // IBK B 7억
-                {3, 900_000_000L,    6, "운용중"},     // 채권형 A 9억
-                {5, 600_000_000L,   12, "운용중"},     // 혼합형 A 6억
-                {7, 400_000_000L,    3, "운용중"},     // MMF 4억
-                {2, 600_000_000L,  -12, "만기완료"},   // KB C 6억, 작년 만기 (확정금액)
+        // 비율 합계 = 100%일 때 예상 funded/benefitObligation 비율 계산
+        double normalizedFundedRatio = 0.0;
+        for (Object[] item : portfolio) {
+            int masterIdx = (int) item[0];
+            double ratio = (double) item[1];
+            double rate = masters.get(masterIdx).getAnnualReturnRate().doubleValue();
+            normalizedFundedRatio += ratio / 100.0 * (1.0 + rate / 100.0);
         }
-                : new Object[][]{
-                {0, 1_500_000_000L,  4, "운용중"},
-                {1, 1_200_000_000L,  8, "운용중"},
-                {3, 1_000_000_000L,  6, "운용중"},
-                {4,   800_000_000L, 10, "운용중"},
-                {5,   700_000_000L, 12, "운용중"},
-                {7,   500_000_000L,  2, "운용중"},
-        };
+        // scalingFactor: 원금 총합을 조정해 funded_amount ≈ benefitObligation × targetRatio%
+        double scalingFactor = (targetFundingRatio / 100.0) / normalizedFundedRatio;
 
         long totalFunded = 0L;
         for (Object[] item : portfolio) {
-            int masterIdx = (int) item[0];
-            long principal = (long) item[1];
-            int monthsOffset = (int) item[2];
-            String status = (String) item[3];
+            int masterIdx  = (int)    item[0];
+            double ratio   = (double) item[1];
+            int monthsOffset = (int)  item[2];
+            String status  = (String) item[3];
 
+            long principal = Math.round(totalBenefitObligation * ratio / 100.0 * scalingFactor);
             InvestmentProductMaster master = masters.get(masterIdx);
-            LocalDate maturityDate = LocalDate.now().plusMonths(monthsOffset);
             BigDecimal rate = master.getAnnualReturnRate();
 
-            // 평가금액 = 원금 × (1 + 수익률)
-            long evaluatedAmount = Math.round(
-                    principal * (1 + rate.doubleValue() / 100.0)
-            );
-
+            long evaluatedAmount = Math.round(principal * (1 + rate.doubleValue() / 100.0));
             Long confirmedAmount = "만기완료".equals(status) ? evaluatedAmount : null;
             totalFunded += evaluatedAmount;
 
             investmentProductDbRepository.save(InvestmentProductDb.builder()
                     .principal(principal)
                     .annualReturnRate(rate)
-                    .maturityDate(maturityDate)
+                    .maturityDate(LocalDate.now().plusMonths(monthsOffset))
                     .confirmedAmount(confirmedAmount)
                     .status(status)
                     .productMaster(master)
@@ -424,7 +444,7 @@ public class DataInitializer {
     // ─────────────────────────────────────────────────────────────
     private void insertReserve(CompanyRetirementDb crdb, LocalDate baseDate,
                                long benefitObligation, long fundedAmount) {
-        long minReserve = benefitObligation;  // 법정 100% 기준
+        long minReserve = benefitObligation;
         long shortfall = Math.max(0, minReserve - fundedAmount);
 
         BigDecimal fundingRatio = BigDecimal.valueOf(fundedAmount)
@@ -432,9 +452,9 @@ public class DataInitializer {
                 .divide(BigDecimal.valueOf(minReserve), 2, RoundingMode.HALF_UP);
 
         String status;
-        if (fundingRatio.compareTo(BigDecimal.valueOf(100)) >= 0)      status = "적정";
-        else if (fundingRatio.compareTo(BigDecimal.valueOf(95)) >= 0)  status = "주의";
-        else                                                            status = "추가납입필요";
+        if (fundingRatio.compareTo(BigDecimal.valueOf(100)) >= 0)     status = "적정";
+        else if (fundingRatio.compareTo(BigDecimal.valueOf(95)) >= 0) status = "주의";
+        else                                                           status = "추가납입필요";
 
         reserveDbRepository.save(ReserveDb.builder()
                 .baseDate(baseDate)
@@ -450,7 +470,61 @@ public class DataInitializer {
     }
 
     // ─────────────────────────────────────────────────────────────
-    // DC 부담금 (기존 로직 유지)
+    // 운용상품 마스터 (전역)
+    // ─────────────────────────────────────────────────────────────
+    private List<InvestmentProductMaster> createProductMasters() {
+        Object[][] data = {
+                // {productProvider, category, isPrincipalGuaranteed, annualReturnRate}
+                {"IBK기업은행",  "정기예금",        true, "3.50"},  // idx 0
+                {"KB국민은행",   "정기예금",        true, "3.20"},  // idx 1
+                {"신한은행",     "정기예금",        true, "3.00"},  // idx 2
+                {"삼성생명",     "이율보증형보험",   true, "2.80"},  // idx 3
+                {"한화생명",     "이율보증형보험",   true, "2.50"},  // idx 4
+                {"미래에셋증권", "ELB 및 ELD",      true, "4.20"},  // idx 5
+                {"NH투자증권",   "ELB 및 ELD",      true, "4.50"},  // idx 6
+                {"KB증권",       "ELB 및 ELD",      true, "3.80"},  // idx 7
+                {"한국투자증권", "ELB 및 ELD",      true, "4.00"},  // idx 8
+        };
+        List<InvestmentProductMaster> result = new ArrayList<>();
+        for (Object[] row : data) {
+            result.add(investmentProductMasterRepository.save(InvestmentProductMaster.builder()
+                    .productProvider((String) row[0])
+                    .productCategory((String) row[1])
+                    .isPrincipalGuaranteed((Boolean) row[2])
+                    .annualReturnRate(new BigDecimal((String) row[3]))
+                    .build()));
+        }
+        return result;
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // 공통 유틸
+    // ─────────────────────────────────────────────────────────────
+    private Employee saveDcEmployee(int ci, int ei, int globalIdx, Company company,
+                                    String[][] employeeData, int year) {
+        String rrn = employeeData[ei][1] + String.format("%07d", globalIdx + 1);
+        boolean isTerminated = ei >= 8;
+        LocalDate terminationDate = !isTerminated ? null
+                : (ei == 8 ? LocalDate.of(year - 1, 8, 31) : LocalDate.of(year - 1, 7, 15));
+
+        return employeeRepository.save(Employee.builder()
+                .name(employeeData[ei][0])
+                .rrn(rrn)
+                .employeeType(ei < 2 ? EmployeeType.EXECUTIVE : EmployeeType.EMPLOYEE)
+                .startDate(LocalDate.of(2018 + ci, 3, 1))
+                .terminationDate(terminationDate)
+                .company(company)
+                .build());
+    }
+
+    private long baseSalaryByType(EmployeeType empType, int ei) {
+        return empType == EmployeeType.EXECUTIVE
+                ? 100_000_000L + (long) (ei % 2) * 20_000_000L
+                : 40_000_000L + (long) (ei - 2) * 5_000_000L;
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // DC 부담금
     // ─────────────────────────────────────────────────────────────
     private void insertContributions(int year, PaymentCycle cycle, long baseAmount, CompanyRetirementDc crd) {
         switch (cycle) {

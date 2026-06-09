@@ -13,4 +13,6 @@ public interface EmployeeRetirementDbRepository extends JpaRepository<EmployeeRe
     List<EmployeeRetirementDb> findByEmployee_Company_Id(Long companyId);
 
     long countByEmployee_Company_IdAndHasIrpAccount(Long companyId, String hasIrpAccount);
+
+    long countByCompanyRetirementDb_Id(Long companyRetirementDbId);
 }
