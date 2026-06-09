@@ -4,17 +4,21 @@ import com.team2.onboarding.dto.EmployeeDetailResponseDto;
 import com.team2.onboarding.dto.EmployeeListItemDto;
 import com.team2.onboarding.dto.EmployeeListResponseDto;
 import com.team2.onboarding.entity.AnnualSalary;
+import com.team2.onboarding.entity.CompanyRetirementDb;
 import com.team2.onboarding.entity.CompanyRetirementDc;
 import com.team2.onboarding.entity.Contribution;
 import com.team2.onboarding.entity.Employee;
+import com.team2.onboarding.entity.EmployeeRetirementDb;
 import com.team2.onboarding.entity.EmployeeRetirementDc;
 import com.team2.onboarding.enums.EmployeeType;
 import com.team2.onboarding.enums.PlanType;
 import com.team2.onboarding.repository.AnnualSalaryRepository;
 import com.team2.onboarding.repository.CompanyRepository;
+import com.team2.onboarding.repository.CompanyRetirementDbRepository;
 import com.team2.onboarding.repository.CompanyRetirementDcRepository;
 import com.team2.onboarding.repository.ContributionRepository;
 import com.team2.onboarding.repository.EmployeeRepository;
+import com.team2.onboarding.repository.EmployeeRetirementDbRepository;
 import com.team2.onboarding.repository.EmployeeRetirementDcRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -37,7 +41,9 @@ public class EmployeeService {
     private final CompanyRepository companyRepository;
     private final EmployeeRepository employeeRepository;
     private final EmployeeRetirementDcRepository employeeRetirementDcRepository;
+    private final EmployeeRetirementDbRepository employeeRetirementDbRepository;
     private final CompanyRetirementDcRepository companyRetirementDcRepository;
+    private final CompanyRetirementDbRepository companyRetirementDbRepository;
     private final AnnualSalaryRepository annualSalaryRepository;
     private final ContributionRepository contributionRepository;
 
@@ -108,6 +114,48 @@ public class EmployeeService {
                         .build())
                 .retirement(toRetirementInfo(employee, retirement))
                 .annualSalaries(salaries)
+                .build();
+    }
+
+    public EmployeeDetailResponseDto getDbMemberDetail(String companyIdStr, Long employeeId) {
+        Long companyId = Long.parseLong(companyIdStr);
+
+        Employee employee = employeeRepository.findByIdAndCompanyId(employeeId, companyId)
+                .orElseThrow(() -> new IllegalArgumentException("가입자를 찾을 수 없습니다."));
+
+        EmployeeRetirementDb retirement =
+                employeeRetirementDbRepository.findByEmployee_Id(employee.getId()).orElse(null);
+
+        String planType = companyRetirementDbRepository.findByCompany_Id(companyId)
+                .map(CompanyRetirementDb::getPlanType)
+                .orElse("DB");
+
+        return EmployeeDetailResponseDto.builder()
+                .id(employee.getId())
+                .name(employee.getName())
+                .rrnMasked(maskRrn(employee.getRrn()))
+                .company(EmployeeDetailResponseDto.CompanyInfo.builder()
+                        .companyName(employee.getCompany().getCompanyName())
+                        .planType(planType)
+                        .build())
+                .retirement(toDbRetirementInfo(employee, retirement))
+                .annualSalaries(List.of())
+                .build();
+    }
+
+    private EmployeeDetailResponseDto.RetirementInfo toDbRetirementInfo(Employee e, EmployeeRetirementDb r) {
+        if (r == null) return null;
+        EmployeeType type = e.getEmployeeType();
+        return EmployeeDetailResponseDto.RetirementInfo.builder()
+                .employeeAccount(r.getEmployeeAccount())
+                .employeeType(type != null ? type.name() : null)
+                .position(type != null ? type.getDescription() : null)
+                .joinDate(r.getJoinDate())
+                .startDate(e.getStartDate())
+                .terminationDate(e.getTerminationDate())
+                .defaultOption(null)
+                .balance(null)
+                .status(e.getTerminationDate() == null ? "재직" : "퇴직")
                 .build();
     }
 

@@ -1,10 +1,15 @@
 package com.team2.onboarding.controller;
 
+import com.team2.onboarding.dto.DbMemberItemDto;
+import com.team2.onboarding.dto.EmployeeDetailResponseDto;
 import com.team2.onboarding.security.JwtTokenProvider;
 import com.team2.onboarding.service.DBService;
+import com.team2.onboarding.service.EmployeeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -12,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 public class DBController {
 
     private final DBService dbService;
+    private final EmployeeService employeeService;
     private final JwtTokenProvider jwtTokenProvider;
 
     @GetMapping("/dashboard")
@@ -21,9 +27,18 @@ public class DBController {
     }
 
     @GetMapping("/members")
-    public ResponseEntity<Object> getMembers(@RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<List<DbMemberItemDto>> getMembers(@RequestHeader("Authorization") String authHeader) {
         String companyId = extractCompanyId(authHeader);
         return ResponseEntity.ok(dbService.getMembers(companyId));
+    }
+
+    @GetMapping("/members/{id}")
+    public ResponseEntity<EmployeeDetailResponseDto> getMemberDetail(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable Long id
+    ) {
+        String companyId = extractCompanyId(authHeader);
+        return ResponseEntity.ok(employeeService.getDbMemberDetail(companyId, id));
     }
 
     @GetMapping("/deadlines")
