@@ -30,15 +30,9 @@ public class CompanyRetirementDc {
     @Column(name = "contract_date")
     private LocalDate contractDate;
 
-    @Column(name = "fee_due_date")
-    private LocalDate feeDueDate;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_cycle")
     private PaymentCycle paymentCycle;
-
-    @Column(name = "contribution_due_date")
-    private LocalDate contributionDueDate;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id")
@@ -46,13 +40,11 @@ public class CompanyRetirementDc {
 
     @Builder
     private CompanyRetirementDc(String companyAccount, PlanType planType, LocalDate contractDate,
-            LocalDate feeDueDate, PaymentCycle paymentCycle, LocalDate contributionDueDate, Company company) {
+            PaymentCycle paymentCycle, Company company) {
         this.companyAccount = companyAccount;
         this.planType = planType;
         this.contractDate = contractDate;
-        this.feeDueDate = feeDueDate;
         this.paymentCycle = paymentCycle;
-        this.contributionDueDate = contributionDueDate;
         this.company = company;
     }
 }

@@ -34,7 +34,7 @@ public class DCService {
     public DCDashboardResponseDto getDashboard(String companyId) {
         Long id = Long.parseLong(companyId);
 
-        long totalBalance = employeeRetirementDcRepository.sumBalanceByCompanyId(id);
+        long totalBalance = 0L;
 
         long totalEmployee = employeeRepository.countByCompany_Id(id);
 
@@ -105,7 +105,7 @@ public class DCService {
                             .name(e.getName())
                             .position(type != null ? type.getDescription() : null)
                             .startDate(e.getStartDate())
-                            .balance(erd != null ? erd.getBalance() : null)
+                            .balance(null)
                             .contributionPaid(null)
                             .status(e.getTerminationDate() != null ? "퇴직" : "재직")
                             .build();

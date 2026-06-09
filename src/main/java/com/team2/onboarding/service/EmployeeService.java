@@ -124,7 +124,7 @@ public class EmployeeService {
                 .position(type != null ? type.getDescription() : null)
                 .joinDate(r != null ? r.getJoinDate() : null)
                 .planType(planType)
-                .balance(r != null ? r.getBalance() : null)
+                .balance(null)
                 .contributionPaid(contributionPaid)
                 .status(e.getTerminationDate() == null ? "재직" : "퇴직")
                 .build();
@@ -142,7 +142,7 @@ public class EmployeeService {
                 .effectiveDate(r.getEffectiveDate())
                 .terminationDate(e.getTerminationDate())
                 .defaultOption(r.getDefaultOption())
-                .balance(r.getBalance())
+                .balance(null)
                 .status(e.getTerminationDate() == null ? "재직" : "퇴직")
                 .build();
     }
@@ -151,6 +151,8 @@ public class EmployeeService {
         return EmployeeDetailResponseDto.AnnualSalaryDto.builder()
                 .year(s.getYear())
                 .salary(s.getSalary())
+                .minContribution(s.getMinContribution())
+                .contribution(s.getContribution())
                 .build();
     }
 
