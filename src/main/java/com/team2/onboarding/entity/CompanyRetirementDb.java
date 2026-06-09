@@ -1,5 +1,6 @@
 package com.team2.onboarding.entity;
 
+import com.team2.onboarding.enums.PlanType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -21,8 +22,9 @@ public class CompanyRetirementDb {
     @Column(name = "company_account")
     private String companyAccount;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "plan_type", length = 2)
-    private String planType;
+    private PlanType planType;
 
     @Column(name = "contract_date")
     private LocalDate contractDate;
@@ -35,10 +37,10 @@ public class CompanyRetirementDb {
     private Company company;
 
     @Builder
-    private CompanyRetirementDb(String companyAccount, String planType, LocalDate contractDate,
+    private CompanyRetirementDb(String companyAccount, PlanType planType, LocalDate contractDate,
             Integer fiscalMonth, Company company) {
         this.companyAccount = companyAccount;
-        this.planType = planType != null ? planType : "DB";
+        this.planType = planType != null ? planType : PlanType.DB;
         this.contractDate = contractDate;
         this.fiscalMonth = fiscalMonth != null ? fiscalMonth : 12;
         this.company = company;

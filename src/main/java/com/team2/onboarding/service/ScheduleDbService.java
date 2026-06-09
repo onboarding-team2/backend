@@ -61,7 +61,7 @@ public class ScheduleDbService {
                 .title(request.getTitle())
                 .dueDate(request.getDueDate())
                 .description(request.getDescription())
-                .status("예정")
+                .status("ACTIVE")
                 .createdDate(LocalDate.now())
                 .targetEmployees(serializeEmployeeIds(request.getEmployeeIds()))
                 .company(company)

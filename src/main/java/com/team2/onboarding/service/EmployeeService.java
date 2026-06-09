@@ -4,6 +4,7 @@ import com.team2.onboarding.dto.EmployeeDetailResponseDto;
 import com.team2.onboarding.dto.EmployeeListItemDto;
 import com.team2.onboarding.dto.EmployeeListResponseDto;
 import com.team2.onboarding.entity.AnnualSalary;
+import com.team2.onboarding.entity.AnnualSalaryDb;
 import com.team2.onboarding.entity.CompanyRetirementDb;
 import com.team2.onboarding.entity.CompanyRetirementDc;
 import com.team2.onboarding.entity.Contribution;
@@ -12,6 +13,7 @@ import com.team2.onboarding.entity.EmployeeRetirementDb;
 import com.team2.onboarding.entity.EmployeeRetirementDc;
 import com.team2.onboarding.enums.EmployeeType;
 import com.team2.onboarding.enums.PlanType;
+import com.team2.onboarding.repository.AnnualSalaryDbRepository;
 import com.team2.onboarding.repository.AnnualSalaryRepository;
 import com.team2.onboarding.repository.CompanyRepository;
 import com.team2.onboarding.repository.CompanyRetirementDbRepository;
@@ -45,6 +47,7 @@ public class EmployeeService {
     private final CompanyRetirementDcRepository companyRetirementDcRepository;
     private final CompanyRetirementDbRepository companyRetirementDbRepository;
     private final AnnualSalaryRepository annualSalaryRepository;
+    private final AnnualSalaryDbRepository annualSalaryDbRepository;
     private final ContributionRepository contributionRepository;
 
     public EmployeeListResponseDto getEmployees(
@@ -127,8 +130,13 @@ public class EmployeeService {
                 employeeRetirementDbRepository.findByEmployee_Id(employee.getId()).orElse(null);
 
         String planType = companyRetirementDbRepository.findByCompany_Id(companyId)
-                .map(CompanyRetirementDb::getPlanType)
+                .map(crdb -> crdb.getPlanType() != null ? crdb.getPlanType().name() : "DB")
                 .orElse("DB");
+
+        List<EmployeeDetailResponseDto.AnnualSalaryDto> salaries =
+                annualSalaryDbRepository.findByEmployee_IdOrderByYearDesc(employee.getId()).stream()
+                        .map(this::toDbSalaryDto)
+                        .toList();
 
         return EmployeeDetailResponseDto.builder()
                 .id(employee.getId())
@@ -139,7 +147,7 @@ public class EmployeeService {
                         .planType(planType)
                         .build())
                 .retirement(toDbRetirementInfo(employee, retirement))
-                .annualSalaries(List.of())
+                .annualSalaries(salaries)
                 .build();
     }
 
@@ -201,6 +209,15 @@ public class EmployeeService {
                 .salary(s.getSalary())
                 .minContribution(s.getMinContribution())
                 .contribution(s.getContribution())
+                .build();
+    }
+
+    private EmployeeDetailResponseDto.AnnualSalaryDto toDbSalaryDto(AnnualSalaryDb s) {
+        return EmployeeDetailResponseDto.AnnualSalaryDto.builder()
+                .year(s.getYear())
+                .salary(s.getSalary())
+                .minContribution(null)
+                .contribution(null)
                 .build();
     }
 

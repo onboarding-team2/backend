@@ -13,7 +13,10 @@ import java.time.LocalDate;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "employee_retirement_db")
+@Table(
+        name = "employee_retirement_db",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"employee_id", "company_retirement_db_id"})
+)
 public class EmployeeRetirementDb {
 
     @Id

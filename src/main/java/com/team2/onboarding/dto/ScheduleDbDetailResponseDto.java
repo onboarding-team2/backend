@@ -57,7 +57,7 @@ public class ScheduleDbDetailResponseDto {
         LocalDate today = LocalDate.now();
         long days = ChronoUnit.DAYS.between(today, schedule.getDueDate());
         String dDay;
-        if ("완료".equals(schedule.getStatus())) {
+        if ("DONE".equals(schedule.getStatus())) {
             dDay = "완료";
         } else if (days < 0) {
             dDay = Math.abs(days) + "일 초과";
