@@ -36,7 +36,7 @@ public class ScheduleDcResponseDto {
         private String status;
 
         @JsonProperty("d_day")
-        private String dDay;
+        private String dayCount;
     }
 
     public static ScheduleDcResponseDto of(List<ScheduleDc> scheduleList) {
@@ -45,22 +45,22 @@ public class ScheduleDcResponseDto {
         List<ScheduleDcItemDto> items = scheduleList.stream()
                 .map(s -> {
                     long days = ChronoUnit.DAYS.between(today, s.getDueDate());
-                    String dDay;
+                    String dayCount;
                     if ("완료".equals(s.getStatus())) {
-                        dDay = "완료";
+                        dayCount = "완료";
                     } else if (days < 0) {
-                        dDay = "D+" + Math.abs(days);
+                        dayCount = "D+" + Math.abs(days);
                     } else if (days == 0) {
-                        dDay = "D-Day";
+                        dayCount = "D-Day";
                     } else {
-                        dDay = "D-" + days;
+                        dayCount = "D-" + days;
                     }
                     return ScheduleDcItemDto.builder()
                             .id(s.getId())
                             .title(s.getTitle())
                             .dueDate(s.getDueDate())
                             .status(s.getStatus())
-                            .dDay(dDay)
+                            .dayCount(dayCount)
                             .build();
                 })
                 .toList();

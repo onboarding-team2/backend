@@ -27,7 +27,7 @@ public class ScheduleDcDetailResponseDto {
     private String status;
 
     @JsonProperty("d_day")
-    private String dDay;
+    private String dayCount;
 
     @JsonProperty("company_name")
     private String companyName;
@@ -56,15 +56,15 @@ public class ScheduleDcDetailResponseDto {
     public static ScheduleDcDetailResponseDto from(ScheduleDc schedule, List<Employee> employees) {
         LocalDate today = LocalDate.now();
         long days = ChronoUnit.DAYS.between(today, schedule.getDueDate());
-        String dDay;
+        String dayCount;
         if ("완료".equals(schedule.getStatus())) {
-            dDay = "완료";
+            dayCount = "완료";
         } else if (days < 0) {
-            dDay = Math.abs(days) + "일 초과";
+            dayCount = Math.abs(days) + "일 초과";
         } else if (days == 0) {
-            dDay = "D-Day";
+            dayCount = "D-Day";
         } else {
-            dDay = days + "일 전";
+            dayCount = days + "일 전";
         }
 
         List<TargetEmployeeDto> employeeDtos = employees.stream()
@@ -82,7 +82,7 @@ public class ScheduleDcDetailResponseDto {
                 .createdDate(schedule.getCreatedDate())
                 .description(schedule.getDescription())
                 .status(schedule.getStatus())
-                .dDay(dDay)
+                .dayCount(dayCount)
                 .companyName(schedule.getCompany() != null ? schedule.getCompany().getCompanyName() : null)
                 .brn(schedule.getCompany() != null ? schedule.getCompany().getBrn() : null)
                 .planType(schedule.getCompany() != null && schedule.getCompany().getPlanType() != null
