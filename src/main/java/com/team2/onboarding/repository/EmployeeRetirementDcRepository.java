@@ -19,4 +19,6 @@ public interface EmployeeRetirementDcRepository extends JpaRepository<EmployeeRe
 
     List<EmployeeRetirementDc> findByEmployee_Company_IdAndDefaultOptionOrderByJoinDateAsc(
             Long companyId, String defaultOption);
+
+    long countByEmployee_Company_IdAndHasIrpAccount(Long companyId, String hasIrpAccount);
 }

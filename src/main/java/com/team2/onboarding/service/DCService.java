@@ -41,6 +41,9 @@ public class DCService {
         long defaultOptionNotSelected = employeeRetirementDcRepository
                 .countByEmployee_Company_IdAndDefaultOption(id, "N");
 
+        long irpAccountNotOpened = employeeRetirementDcRepository
+                .countByEmployee_Company_IdAndHasIrpAccount(id, "N");
+
         CompanyRetirementDc crd = companyRetirementDcRepository.findByCompanyId(id).orElse(null);
 
         long thisMonthContribution = 0L;
@@ -81,6 +84,7 @@ public class DCService {
                 .defaultOptionNotSelected(defaultOptionNotSelected)
                 .defaultOptionMembers(defaultOptionMembers)
                 .defaultOptionSummary(defaultOptionSummary)
+                .irpAccountNotOpened(irpAccountNotOpened)
                 .thisMonthContribution(thisMonthContribution)
                 .contributionDueDate(contributionDueDate)
                 .build();

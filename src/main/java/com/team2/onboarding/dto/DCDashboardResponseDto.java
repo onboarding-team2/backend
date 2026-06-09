@@ -30,4 +30,7 @@ public class DCDashboardResponseDto {
 
     @JsonProperty("contribution_due_date")
     private String contributionDueDate;
+
+    @JsonProperty("irp_account_not_opened")
+    private long irpAccountNotOpened;
 }
