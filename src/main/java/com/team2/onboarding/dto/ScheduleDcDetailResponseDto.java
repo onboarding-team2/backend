@@ -1,0 +1,97 @@
+package com.team2.onboarding.dto;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.team2.onboarding.entity.Employee;
+import com.team2.onboarding.entity.ScheduleDc;
+import lombok.Builder;
+import lombok.Getter;
+
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+
+@Getter
+@Builder
+public class ScheduleDcDetailResponseDto {
+
+    private Long id;
+    private String title;
+
+    @JsonProperty("due_date")
+    private LocalDate dueDate;
+
+    @JsonProperty("created_date")
+    private LocalDate createdDate;
+
+    private String description;
+    private String status;
+
+    @JsonProperty("d_day")
+    private String dDay;
+
+    @JsonProperty("company_name")
+    private String companyName;
+
+    private String brn;
+
+    @JsonProperty("plan_type")
+    private String planType;
+
+    @JsonProperty("target_employees")
+    private List<TargetEmployeeDto> targetEmployees;
+
+    @Getter
+    @Builder
+    public static class TargetEmployeeDto {
+
+        @JsonProperty("employee_id")
+        private Long employeeId;
+
+        private String name;
+
+        @JsonProperty("company_name")
+        private String companyName;
+    }
+
+    public static ScheduleDcDetailResponseDto from(ScheduleDc schedule, List<Employee> employees) {
+        LocalDate today = LocalDate.now();
+        long days = ChronoUnit.DAYS.between(today, schedule.getDueDate());
+        String dDay;
+        if ("완료".equals(schedule.getStatus())) {
+            dDay = "완료";
+        } else if (days < 0) {
+            dDay = Math.abs(days) + "일 초과";
+        } else if (days == 0) {
+            dDay = "D-Day";
+        } else {
+            dDay = days + "일 전";
+        }
+
+        List<TargetEmployeeDto> employeeDtos = employees.stream()
+                .map(e -> TargetEmployeeDto.builder()
+                        .employeeId(e.getId())
+                        .name(e.getName())
+                        .companyName(e.getCompany() != null ? e.getCompany().getCompanyName() : null)
+                        .build())
+                .toList();
+
+        String companyName = schedule.getCompany() != null ? schedule.getCompany().getCompanyName() : null;
+        String brn = schedule.getCompany() != null ? schedule.getCompany().getBrn() : null;
+        String planType = schedule.getCompany() != null && schedule.getCompany().getPlanType() != null
+                ? schedule.getCompany().getPlanType().name() : null;
+
+        return ScheduleDcDetailResponseDto.builder()
+                .id(schedule.getId())
+                .title(schedule.getTitle())
+                .dueDate(schedule.getDueDate())
+                .createdDate(schedule.getCreatedDate())
+                .description(schedule.getDescription())
+                .status(schedule.getStatus())
+                .dDay(dDay)
+                .companyName(companyName)
+                .brn(brn)
+                .planType(planType)
+                .targetEmployees(employeeDtos)
+                .build();
+    }
+}

@@ -56,4 +56,8 @@ public class ScheduleDc {
         this.targetEmployees = targetEmployees;
         this.company = company;
     }
+
+    public void complete() {
+        this.status = "완료";
+    }
 }
