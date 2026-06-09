@@ -75,11 +75,6 @@ public class ScheduleDcDetailResponseDto {
                         .build())
                 .toList();
 
-        String companyName = schedule.getCompany() != null ? schedule.getCompany().getCompanyName() : null;
-        String brn = schedule.getCompany() != null ? schedule.getCompany().getBrn() : null;
-        String planType = schedule.getCompany() != null && schedule.getCompany().getPlanType() != null
-                ? schedule.getCompany().getPlanType().name() : null;
-
         return ScheduleDcDetailResponseDto.builder()
                 .id(schedule.getId())
                 .title(schedule.getTitle())
@@ -88,9 +83,10 @@ public class ScheduleDcDetailResponseDto {
                 .description(schedule.getDescription())
                 .status(schedule.getStatus())
                 .dDay(dDay)
-                .companyName(companyName)
-                .brn(brn)
-                .planType(planType)
+                .companyName(schedule.getCompany() != null ? schedule.getCompany().getCompanyName() : null)
+                .brn(schedule.getCompany() != null ? schedule.getCompany().getBrn() : null)
+                .planType(schedule.getCompany() != null && schedule.getCompany().getPlanType() != null
+                        ? schedule.getCompany().getPlanType().name() : null)
                 .targetEmployees(employeeDtos)
                 .build();
     }

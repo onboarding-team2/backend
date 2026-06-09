@@ -55,7 +55,6 @@ public class ScheduleDcResponseDto {
                     } else {
                         dDay = "D-" + days;
                     }
-
                     return ScheduleDcItemDto.builder()
                             .id(s.getId())
                             .title(s.getTitle())
@@ -79,8 +78,7 @@ public class ScheduleDcResponseDto {
                 .count();
 
         long overdueCount = scheduleList.stream()
-                .filter(s -> !"완료".equals(s.getStatus()))
-                .filter(s -> s.getDueDate().isBefore(today))
+                .filter(s -> !"완료".equals(s.getStatus()) && s.getDueDate().isBefore(today))
                 .count();
 
         return ScheduleDcResponseDto.builder()

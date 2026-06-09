@@ -16,6 +16,7 @@ public interface ScheduleDcRepository extends JpaRepository<ScheduleDc, Long> {
             Long companyId, LocalDate startDate, LocalDate endDate);
 
     @Query("SELECT s FROM ScheduleDc s WHERE s.company.id = :companyId " +
-            "AND LOWER(s.title) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+            "AND (LOWER(s.title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "OR LOWER(s.company.companyName) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     List<ScheduleDc> searchByKeyword(@Param("companyId") Long companyId, @Param("keyword") String keyword);
 }

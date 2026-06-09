@@ -1,7 +1,5 @@
 package com.team2.onboarding.service;
 
-import tools.jackson.core.type.TypeReference;
-import tools.jackson.databind.ObjectMapper;
 import com.team2.onboarding.dto.ScheduleDcCreateRequestDto;
 import com.team2.onboarding.dto.ScheduleDcDetailResponseDto;
 import com.team2.onboarding.dto.ScheduleDcResponseDto;
@@ -16,7 +14,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,7 +27,6 @@ public class ScheduleDcService {
     private final ScheduleDcRepository scheduleDcRepository;
     private final CompanyRepository companyRepository;
     private final EmployeeRepository employeeRepository;
-    private final ObjectMapper objectMapper;
 
     public ScheduleDcResponseDto getSchedules(Long companyId, Integer period, String keyword) {
         List<ScheduleDc> schedules;
@@ -35,7 +35,9 @@ public class ScheduleDcService {
             schedules = scheduleDcRepository.searchByKeyword(companyId, keyword);
         } else if (period != null) {
             LocalDate startDate = LocalDate.now().withDayOfMonth(1);
-            LocalDate endDate = startDate.plusMonths(period).minusDays(1);
+            LocalDate endDate = period == 1
+                    ? startDate.plusMonths(1).minusDays(1)
+                    : startDate.plusMonths(2).minusDays(1);
             schedules = scheduleDcRepository.findByCompany_IdAndDueDateBetweenOrderByDueDateAsc(
                     companyId, startDate, endDate);
         } else {
@@ -45,28 +47,18 @@ public class ScheduleDcService {
         return ScheduleDcResponseDto.of(schedules);
     }
 
-    public ScheduleDcDetailResponseDto getScheduleDetail(Long scheduleId, Long companyId) {
-        ScheduleDc schedule = scheduleDcRepository.findById(scheduleId)
-                .orElseThrow(() -> new IllegalArgumentException("일정을 찾을 수 없습니다. id=" + scheduleId));
-        if (!schedule.getCompany().getId().equals(companyId)) {
-            throw new IllegalArgumentException("해당 일정에 대한 접근 권한이 없습니다.");
-        }
-        List<Employee> employees = parseTargetEmployees(schedule.getTargetEmployees(), companyId);
+    public ScheduleDcDetailResponseDto getScheduleDetail(Long scheduleId) {
+        ScheduleDc schedule = findById(scheduleId);
+        List<Employee> employees = resolveEmployees(schedule.getTargetEmployees());
         return ScheduleDcDetailResponseDto.from(schedule, employees);
     }
 
     @Transactional
     public ScheduleDcDetailResponseDto createSchedule(Long companyId, ScheduleDcCreateRequestDto request) {
         Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new IllegalArgumentException("기업을 찾을 수 없습니다. id=" + companyId));
+                .orElseThrow(() -> new IllegalArgumentException("회사를 찾을 수 없습니다. id=" + companyId));
 
-        List<Long> employeeIds = request.getEmployeeIds();
-        if (employeeIds != null && !employeeIds.isEmpty()) {
-            List<Employee> found = employeeRepository.findByIdInAndCompany_Id(employeeIds, companyId);
-            if (found.size() != employeeIds.size()) {
-                throw new IllegalArgumentException("일부 가입자가 해당 기업에 속하지 않습니다.");
-            }
-        }
+        String targetEmployeesJson = serializeEmployeeIds(request.getEmployeeIds());
 
         ScheduleDc schedule = ScheduleDc.builder()
                 .title(request.getTitle())
@@ -74,49 +66,50 @@ public class ScheduleDcService {
                 .description(request.getDescription())
                 .status("예정")
                 .createdDate(LocalDate.now())
-                .targetEmployees(serializeEmployeeIds(employeeIds))
+                .targetEmployees(targetEmployeesJson)
                 .company(company)
                 .build();
 
         ScheduleDc saved = scheduleDcRepository.save(schedule);
-        List<Employee> employees = parseTargetEmployees(saved.getTargetEmployees(), companyId);
+        List<Employee> employees = resolveEmployees(saved.getTargetEmployees());
         return ScheduleDcDetailResponseDto.from(saved, employees);
     }
 
     @Transactional
-    public void deleteSchedule(Long scheduleId, Long companyId) {
-        ScheduleDc schedule = scheduleDcRepository.findById(scheduleId)
-                .orElseThrow(() -> new IllegalArgumentException("일정을 찾을 수 없습니다. id=" + scheduleId));
-        if (!schedule.getCompany().getId().equals(companyId)) {
-            throw new IllegalArgumentException("해당 일정에 대한 접근 권한이 없습니다.");
-        }
+    public void deleteSchedule(Long scheduleId) {
+        ScheduleDc schedule = findById(scheduleId);
         scheduleDcRepository.delete(schedule);
     }
 
     @Transactional
-    public ScheduleDcDetailResponseDto completeSchedule(Long scheduleId, Long companyId) {
-        ScheduleDc schedule = scheduleDcRepository.findById(scheduleId)
-                .orElseThrow(() -> new IllegalArgumentException("일정을 찾을 수 없습니다. id=" + scheduleId));
-        if (!schedule.getCompany().getId().equals(companyId)) {
-            throw new IllegalArgumentException("해당 일정에 대한 접근 권한이 없습니다.");
-        }
+    public ScheduleDcDetailResponseDto completeSchedule(Long scheduleId) {
+        ScheduleDc schedule = findById(scheduleId);
         schedule.complete();
-        List<Employee> employees = parseTargetEmployees(schedule.getTargetEmployees(), companyId);
+        List<Employee> employees = resolveEmployees(schedule.getTargetEmployees());
         return ScheduleDcDetailResponseDto.from(schedule, employees);
     }
 
-    private List<Employee> parseTargetEmployees(String targetEmployeesJson, Long companyId) {
-        if (targetEmployeesJson == null || targetEmployeesJson.isBlank()) {
-            return List.of();
+    private ScheduleDc findById(Long scheduleId) {
+        return scheduleDcRepository.findById(scheduleId)
+                .orElseThrow(() -> new IllegalArgumentException("일정을 찾을 수 없습니다. id=" + scheduleId));
+    }
+
+    private List<Employee> resolveEmployees(String targetEmployeesJson) {
+        if (targetEmployeesJson == null || targetEmployeesJson.isBlank()
+                || "[]".equals(targetEmployeesJson.trim())) {
+            return Collections.emptyList();
         }
         try {
-            List<Long> ids = objectMapper.readValue(targetEmployeesJson, new TypeReference<List<Long>>() {});
-            if (ids == null || ids.isEmpty()) {
-                return List.of();
-            }
-            return employeeRepository.findByIdInAndCompany_Id(ids, companyId);
+            String trimmed = targetEmployeesJson.trim().replaceAll("^\\[|]$", "");
+            if (trimmed.isBlank()) return Collections.emptyList();
+            List<Long> ids = Arrays.stream(trimmed.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isBlank())
+                    .map(Long::parseLong)
+                    .collect(Collectors.toList());
+            return ids.isEmpty() ? Collections.emptyList() : employeeRepository.findAllById(ids);
         } catch (Exception e) {
-            return List.of();
+            return Collections.emptyList();
         }
     }
 
@@ -124,10 +117,6 @@ public class ScheduleDcService {
         if (employeeIds == null || employeeIds.isEmpty()) {
             return "[]";
         }
-        try {
-            return objectMapper.writeValueAsString(employeeIds);
-        } catch (Exception e) {
-            return "[]";
-        }
+        return "[" + employeeIds.stream().map(String::valueOf).collect(Collectors.joining(", ")) + "]";
     }
 }
