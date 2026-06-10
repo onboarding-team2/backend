@@ -1,5 +1,6 @@
 package com.team2.onboarding.controller;
 
+import com.team2.onboarding.dto.DcContributionStatusResponseDto;
 import com.team2.onboarding.dto.ExpectedRetireeDto;
 import com.team2.onboarding.security.JwtTokenProvider;
 import com.team2.onboarding.service.CompanyService;
@@ -37,6 +38,13 @@ public class CompanyController {
     @GetMapping("/{companyId}/defaultOption-nonEmployee-count")
     public ResponseEntity<Long> getDefaultOptionNonEmployeeCount(@PathVariable Long companyId) {
         return ResponseEntity.ok(companyService.getDefaultOptionNonEmployeeCount(companyId));
+    }
+
+    @GetMapping("/dc-contributions")
+    public ResponseEntity<DcContributionStatusResponseDto> getDcContributions(
+            @RequestHeader("Authorization") String authHeader) {
+        String companyId = extractCompanyId(authHeader);
+        return ResponseEntity.ok(companyService.getDcContributions(companyId));
     }
 
     @GetMapping("/expected-retirees")
