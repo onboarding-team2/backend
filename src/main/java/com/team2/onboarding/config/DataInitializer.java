@@ -18,6 +18,7 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 @Configuration
 @RequiredArgsConstructor
@@ -193,9 +194,6 @@ public class DataInitializer {
                 .company(company)
                 .build());
 
-        long baseContribution = 80_000_000L + (long) ci * 20_000_000L;
-        insertContributions(year, cycle, baseContribution, crd);
-
         for (String feeType : new String[]{"운용관리", "자산관리"}) {
             long feeAmount = "운용관리".equals(feeType)
                     ? 400_000L + (long) ci * 50_000L
@@ -215,6 +213,8 @@ public class DataInitializer {
             }
         }
 
+        // 직원·연봉 먼저 생성하고 당해 contribution 합산
+        long totalContribution = 0L;
         for (int ei = 0; ei < employeeData.length; ei++) {
             int globalIdx = ci * 10 + ei;
             Employee employee = saveDcEmployee(ci, ei, globalIdx, company, employeeData, year);
@@ -243,8 +243,15 @@ public class DataInitializer {
                         .contribution(contribution)
                         .employee(employee)
                         .build());
+
+                if (y == year) {
+                    totalContribution += contribution;
+                }
             }
         }
+
+        // 연간 총 contribution 기준으로 납입 스케줄 생성
+        insertContributions(year, cycle, totalContribution, crd);
     }
 
     // ═════════════════════════════════════════════════════════════
@@ -526,14 +533,26 @@ public class DataInitializer {
     // ─────────────────────────────────────────────────────────────
     // DC 부담금
     // ─────────────────────────────────────────────────────────────
-    private void insertContributions(int year, PaymentCycle cycle, long baseAmount, CompanyRetirementDc crd) {
+    // totalAnnual = 당해 연도 직원 전체 contribution 합계
+    // N-1개 레코드는 base*(0.85~1.15) 랜덤, 마지막 레코드는 totalAnnual에서 나머지를 채워 합계 일치
+    private void insertContributions(int year, PaymentCycle cycle, long totalAnnual, CompanyRetirementDc crd) {
+        Random rnd = new Random();
         switch (cycle) {
             case MONTHLY -> {
+                long base = totalAnnual / 12;
+                long[] amounts = new long[12];
+                long allocated = 0L;
+                for (int i = 0; i < 11; i++) {
+                    amounts[i] = Math.round(base * (0.85 + rnd.nextDouble() * 0.30));
+                    allocated += amounts[i];
+                }
+                amounts[11] = totalAnnual - allocated;
+
                 for (int month = 1; month <= 12; month++) {
                     LocalDate dueDate = LocalDate.of(year, month, 25);
                     String status = month < 6 ? "납입완료" : month == 6 ? "미납" : "예정";
                     contributionRepository.save(Contribution.builder()
-                            .contributionAmount(baseAmount)
+                            .contributionAmount(amounts[month - 1])
                             .dueDate(dueDate)
                             .paidDate(month < 6 ? dueDate.minusDays(2) : null)
                             .status(status)
@@ -543,12 +562,21 @@ public class DataInitializer {
                 }
             }
             case QUARTERLY -> {
+                long base = totalAnnual / 4;
+                long[] amounts = new long[4];
+                long allocated = 0L;
+                for (int i = 0; i < 3; i++) {
+                    amounts[i] = Math.round(base * (0.85 + rnd.nextDouble() * 0.30));
+                    allocated += amounts[i];
+                }
+                amounts[3] = totalAnnual - allocated;
+
                 int[][] quarters = {{3, 31}, {6, 30}, {9, 30}, {12, 31}};
                 String[] statuses = {"납입완료", "미납", "예정", "예정"};
                 for (int q = 0; q < 4; q++) {
                     LocalDate dueDate = LocalDate.of(year, quarters[q][0], quarters[q][1]);
                     contributionRepository.save(Contribution.builder()
-                            .contributionAmount(baseAmount * 3)
+                            .contributionAmount(amounts[q])
                             .dueDate(dueDate)
                             .paidDate("납입완료".equals(statuses[q]) ? dueDate.minusDays(3) : null)
                             .status(statuses[q])
@@ -563,7 +591,7 @@ public class DataInitializer {
                     int y = year - 2 + i;
                     LocalDate dueDate = LocalDate.of(y, 12, 31);
                     contributionRepository.save(Contribution.builder()
-                            .contributionAmount(baseAmount * 12)
+                            .contributionAmount(totalAnnual)
                             .dueDate(dueDate)
                             .paidDate("납입완료".equals(statuses[i]) ? dueDate.minusDays(10) : null)
                             .status(statuses[i])
