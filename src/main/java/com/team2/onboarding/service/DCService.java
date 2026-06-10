@@ -48,16 +48,24 @@ public class DCService {
 
         long thisMonthContribution = 0L;
         String contributionDueDate = null;
-        if (crd != null) {
-            LocalDate now = LocalDate.now();
-            LocalDate start = now.withDayOfMonth(1);
-            LocalDate end = now.withDayOfMonth(now.lengthOfMonth());
-            var thisMonth = contributionRepository
-                    .findTopByCompanyRetirementDcAndDueDateBetweenOrderByDueDateAsc(crd, start, end);
-            if (thisMonth.isPresent()) {
-                thisMonthContribution = thisMonth.get().getContributionAmount();
-                contributionDueDate = thisMonth.get().getDueDate().toString();
-            }
+//        if (crd != null) {
+//            LocalDate now = LocalDate.now();
+//            LocalDate start = now.withDayOfMonth(1);
+//            LocalDate end = now.withDayOfMonth(now.lengthOfMonth());
+//            var thisMonth = contributionRepository
+//                    .findTopByCompanyRetirementDcAndDueDateBetweenOrderByDueDateAsc(crd, start, end);
+//            if (thisMonth.isPresent()) {
+//                thisMonthContribution = thisMonth.get().getContributionAmount();
+//                contributionDueDate = thisMonth.get().getDueDate().toString();
+//            }
+//        }
+        LocalDate now = LocalDate.now();
+        var nextContribution = contributionRepository
+                .findTopByCompanyRetirementDcAndDueDateGreaterThanEqualOrderByDueDateAsc(crd, now);
+
+        if (nextContribution.isPresent()) {
+            thisMonthContribution = nextContribution.get().getContributionAmount();
+            contributionDueDate = nextContribution.get().getDueDate().toString();
         }
 
         List<EmployeeRetirementDc> notSelectedList = employeeRetirementDcRepository

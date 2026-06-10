@@ -19,6 +19,8 @@ public interface ContributionRepository extends JpaRepository<Contribution, Long
 
     Optional<Contribution> findTopByCompanyRetirementDcAndDueDateBetweenOrderByDueDateAsc(
             CompanyRetirementDc companyRetirementDc, LocalDate start, LocalDate end);
+    Optional<Contribution> findTopByCompanyRetirementDcAndDueDateGreaterThanEqualOrderByDueDateAsc(
+            CompanyRetirementDc companyRetirementDc, LocalDate date );
 
     @Query("""
     SELECT COALESCE(SUM(c.contributionAmount), 0)
