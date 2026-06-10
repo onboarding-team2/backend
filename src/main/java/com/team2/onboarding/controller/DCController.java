@@ -27,9 +27,12 @@ public class DCController {
     }
 
     @GetMapping("/members")
-    public ResponseEntity<List<DcMemberItemDto>> getMembers(@RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<List<DcMemberItemDto>> getMembers(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestParam(required = false) String filter
+    ) {
         String companyId = extractCompanyId(authHeader);
-        return ResponseEntity.ok(dcService.getMembers(companyId));
+        return ResponseEntity.ok(dcService.getMembers(companyId, filter));
     }
 
     @GetMapping("/members/{id}")

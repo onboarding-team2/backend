@@ -91,6 +91,10 @@ public class DCService {
     }
 
     public List<DcMemberItemDto> getMembers(String companyId) {
+        return getMembers(companyId, null);
+    }
+
+    public List<DcMemberItemDto> getMembers(String companyId, String filter) {
         Long id = Long.parseLong(companyId);
 
         List<Employee> employees = employeeRepository.findByCompany_Id(id);
@@ -118,7 +122,22 @@ public class DCService {
                             .status(e.getTerminationDate() != null ? "퇴직" : "재직")
                             .build();
                 })
+                .filter(dto -> matchesFilter(dto, filter))
                 .toList();
+    }
+
+    /**
+     * 미처리 현황용 필터.
+     * - default-unset: 디폴트옵션 미선정(Y 아님)
+     * - irp-none: IRP 개설 미완료(Y 아님)
+     */
+    private boolean matchesFilter(DcMemberItemDto dto, String filter) {
+        if (filter == null || filter.isBlank()) return true;
+        return switch (filter) {
+            case "default-unset" -> !"Y".equals(dto.getDefaultOption());
+            case "irp-none" -> !"Y".equals(dto.getHasIrpAccount());
+            default -> true;
+        };
     }
 
     private String maskRrn(String rrn) {
