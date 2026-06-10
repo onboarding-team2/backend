@@ -50,7 +50,6 @@ public class DbScheduleService {
     public DbScheduleDetailResponseDto getScheduleDetail(Long scheduleId, Long companyId) {
         DbSchedule schedule = dbScheduleRepository.findByIdAndCompany_Id(scheduleId, companyId)
                 .orElseThrow(() -> new EntityNotFoundException("일정을 찾을 수 없습니다."));
-        // companyId 불일치도 404 처리하여 일정의 존재 자체를 노출하지 않음;
 
         return DbScheduleDetailResponseDto.from(schedule);
     }
@@ -80,14 +79,14 @@ public class DbScheduleService {
     @Transactional
     public void deleteSchedule(Long scheduleId, Long companyId) {
         DbSchedule schedule = dbScheduleRepository.findByIdAndCompany_Id(scheduleId, companyId)
-                .orElseThrow(() -> new IllegalArgumentException("일정을 찾을 수 없습니다. id=" + scheduleId));
+                .orElseThrow(() -> new EntityNotFoundException("일정을 찾을 수 없습니다. id=" + scheduleId));
         dbScheduleRepository.delete(schedule);
     }
 
     @Transactional
     public DbScheduleDetailResponseDto completeSchedule(Long scheduleId, Long companyId) {
         DbSchedule schedule = dbScheduleRepository.findByIdAndCompany_Id(scheduleId, companyId)
-                .orElseThrow(() -> new IllegalArgumentException("일정을 찾을 수 없습니다. id=" + scheduleId));
+                .orElseThrow(() -> new EntityNotFoundException("일정을 찾을 수 없습니다. id=" + scheduleId));
         schedule.complete();
         return DbScheduleDetailResponseDto.from(schedule);
     }

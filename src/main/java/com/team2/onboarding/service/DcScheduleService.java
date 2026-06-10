@@ -51,8 +51,7 @@ public class DcScheduleService {
 
     public DcScheduleDetailResponseDto getScheduleDetail(Long scheduleId, Long companyId) {
         DcSchedule schedule = dcScheduleRepository.findByIdAndCompany_Id(scheduleId, companyId)
-                    .orElseThrow(() -> new EntityNotFoundException("일정을 찾을 수 없습니다."));
-        // companyId 불일치도 404 처리하여 일정의 존재 자체를 노출하지 않음;
+                .orElseThrow(() -> new EntityNotFoundException("일정을 찾을 수 없습니다."));
 
         return DcScheduleDetailResponseDto.from(schedule);
     }
@@ -82,14 +81,14 @@ public class DcScheduleService {
     @Transactional
     public void deleteSchedule(Long scheduleId, Long companyId) {
         DcSchedule schedule = dcScheduleRepository.findByIdAndCompany_Id(scheduleId, companyId)
-                .orElseThrow(() -> new IllegalArgumentException("일정을 찾을 수 없습니다. id=" + scheduleId));
+                .orElseThrow(() -> new EntityNotFoundException("일정을 찾을 수 없습니다. id=" + scheduleId));
         dcScheduleRepository.delete(schedule);
     }
 
     @Transactional
     public DcScheduleDetailResponseDto completeSchedule(Long scheduleId, Long companyId) {
         DcSchedule schedule = dcScheduleRepository.findByIdAndCompany_Id(scheduleId, companyId)
-                .orElseThrow(() -> new IllegalArgumentException("일정을 찾을 수 없습니다. id=" + scheduleId));
+                .orElseThrow(() -> new EntityNotFoundException("일정을 찾을 수 없습니다. id=" + scheduleId));
         schedule.complete();
         return DcScheduleDetailResponseDto.from(schedule);
     }
