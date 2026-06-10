@@ -138,7 +138,7 @@ public class DBService {
         return rrn.substring(0, 6) + "-*******";
     }
 
-    public Object getDeadlines(String companyId) {
+    public Object getSchedules(String companyId) {
         return null;
     }
 

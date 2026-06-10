@@ -9,7 +9,7 @@ import java.util.List;
 
 @Getter
 @NoArgsConstructor
-public class ScheduleDbCreateRequestDto {
+public class DbScheduleCreateRequestDto {
 
     private String title;
 

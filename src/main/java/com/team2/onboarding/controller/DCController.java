@@ -54,10 +54,10 @@ public class DCController {
         return ResponseEntity.ok(employeeService.getEmployeeDetail(companyId, id));
     }
 
-    @GetMapping("/deadlines")
-    public ResponseEntity<Object> getDeadlines(@RequestHeader("Authorization") String authHeader) {
+    @GetMapping("/schedules")
+    public ResponseEntity<Object> getSchedules(@RequestHeader("Authorization") String authHeader) {
         String companyId = extractCompanyId(authHeader);
-        return ResponseEntity.ok(dcService.getDeadlines(companyId));
+        return ResponseEntity.ok(dcService.getSchedules(companyId));
     }
 
     @GetMapping("/documents")

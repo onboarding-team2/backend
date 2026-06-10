@@ -10,13 +10,15 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "schedules_dc")
-@Check(name = "chk_schedule_status", constraints = "status IN ('예정', '진행중', '완료')")
-public class ScheduleDc {
+@Check(name = "chk_dc_schedule_status", constraints = "status IN ('ACTIVE', 'DONE', 'OVERDUE')")
+public class DcSchedule {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,7 +30,7 @@ public class ScheduleDc {
     @Column(nullable = false)
     private String title;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(length = 500, nullable = false)
     private String description;
 
     @Column(nullable = false, length = 20)
@@ -37,8 +39,13 @@ public class ScheduleDc {
     @Column(name = "created_date", nullable = false)
     private LocalDate createdDate;
 
-    @Column(name = "target_employees", columnDefinition = "JSON DEFAULT (JSON_ARRAY())")
-    private String targetEmployees;
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "schedule_employees",
+            joinColumns = @JoinColumn(name = "schedule_id"),
+            inverseJoinColumns = @JoinColumn(name = "employee_id")
+    )
+    private List<Employee> targetEmployees = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id", nullable = false)
@@ -46,18 +53,25 @@ public class ScheduleDc {
     private Company company;
 
     @Builder
-    private ScheduleDc(LocalDate dueDate, String title, String description,
-            String status, LocalDate createdDate, String targetEmployees, Company company) {
+    private DcSchedule(
+            LocalDate dueDate,
+            String title,
+            String description,
+            String status,
+            LocalDate createdDate,
+            List<Employee> targetEmployees,
+            Company company
+    ) {
         this.dueDate = dueDate;
         this.title = title;
         this.description = description;
         this.status = status;
         this.createdDate = createdDate != null ? createdDate : LocalDate.now();
-        this.targetEmployees = targetEmployees;
+        this.targetEmployees = targetEmployees != null ? targetEmployees : new ArrayList<>();
         this.company = company;
     }
 
     public void complete() {
-        this.status = "완료";
+        this.status = "DONE";
     }
 }
