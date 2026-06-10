@@ -7,6 +7,7 @@ import com.team2.onboarding.entity.CompanyRetirementDc;
 import com.team2.onboarding.entity.Employee;
 import com.team2.onboarding.entity.EmployeeRetirementDc;
 import com.team2.onboarding.enums.EmployeeType;
+import com.team2.onboarding.enums.PaymentCycle;
 import com.team2.onboarding.repository.CompanyRetirementDcRepository;
 import com.team2.onboarding.repository.ContributionRepository;
 import com.team2.onboarding.repository.EmployeeRepository;
@@ -86,6 +87,11 @@ public class DCService {
             defaultOptionSummary = firstName + " 외 " + (defaultOptionNotSelected - 1) + "명";
         }
 
+        PaymentCycle paymentCycle =
+                companyRetirementDcRepository.findByCompanyId(id)
+                        .map(CompanyRetirementDc::getPaymentCycle)
+                        .orElse(null);
+
         return DCDashboardResponseDto.builder()
                 .totalBalance(totalBalance)
                 .totalEmployee(totalEmployee)
@@ -95,6 +101,7 @@ public class DCService {
                 .irpAccountNotOpened(irpAccountNotOpened)
                 .thisMonthContribution(thisMonthContribution)
                 .contributionDueDate(contributionDueDate)
+                .paymentCycle(paymentCycle)
                 .build();
     }
 
