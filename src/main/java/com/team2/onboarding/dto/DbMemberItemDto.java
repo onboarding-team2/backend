@@ -11,6 +11,7 @@ public class DbMemberItemDto {
 
     private Long id;
     private String name;
+    private String rrnMasked;
     private String position;
     private LocalDate startDate;
     private LocalDate joinDate;

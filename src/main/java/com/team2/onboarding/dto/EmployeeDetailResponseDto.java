@@ -60,6 +60,7 @@ public class EmployeeDetailResponseDto {
         private LocalDate effectiveDate;
         private LocalDate terminationDate;
         private String defaultOption;
+        private String hasIrpAccount;
         private Long balance;
         private String status;
 
@@ -73,6 +74,7 @@ public class EmployeeDetailResponseDto {
                 LocalDate effectiveDate,
                 LocalDate terminationDate,
                 String defaultOption,
+                String hasIrpAccount,
                 Long balance,
                 String status
         ) {
@@ -84,6 +86,7 @@ public class EmployeeDetailResponseDto {
             this.effectiveDate = effectiveDate;
             this.terminationDate = terminationDate;
             this.defaultOption = defaultOption;
+            this.hasIrpAccount = hasIrpAccount;
             this.balance = balance;
             this.status = status;
         }

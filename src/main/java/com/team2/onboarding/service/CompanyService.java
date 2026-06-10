@@ -12,6 +12,11 @@ import com.team2.onboarding.repository.CompanyRetirementDcRepository;
 import com.team2.onboarding.repository.ContributionRepository;
 import com.team2.onboarding.repository.EmployeeRepository;
 import com.team2.onboarding.repository.EmployeeRetirementDcRepository;
+import com.team2.onboarding.entity.Company;
+import com.team2.onboarding.entity.CompanyRetirementDc;
+import com.team2.onboarding.enums.PlanType;
+import com.team2.onboarding.repository.*;
+import com.team2.onboarding.dto.CompanyInfoDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -32,6 +37,7 @@ public class CompanyService {
     public CompanyInfoDto getCompanyInfo(Long companyId) {
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new RuntimeException("해당 기업 정보가 존재하지 않습니다."));
+
 
         PlanType planType = company.getPlanType();
 

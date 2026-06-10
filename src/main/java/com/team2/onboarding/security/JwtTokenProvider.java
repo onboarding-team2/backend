@@ -13,7 +13,7 @@ import java.util.Date;
 public class JwtTokenProvider {
     private final String SECRET_KEY = "your-very-secret-key-must-be-very-long-and-secure-key";
     private final SecretKey key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes(StandardCharsets.UTF_8));
-    private final long EXPIRATION_TIME = 1000L * 60 * 60 * 24; // 24시간 유지
+    private final long EXPIRATION_TIME = 1000L * 60 * 60; // 1시간 유지
 
     // 토큰 생성 (Company id(PK)를 Subject로 사용)
     public String createToken(String companyId) {

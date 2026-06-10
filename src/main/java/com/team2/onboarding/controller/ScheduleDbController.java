@@ -28,8 +28,12 @@ public class ScheduleDbController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ScheduleDbDetailResponseDto> getScheduleDetail(@PathVariable Long id) {
-        return ResponseEntity.ok(scheduleDbService.getScheduleDetail(id));
+    public ResponseEntity<ScheduleDbDetailResponseDto> getScheduleDetail(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable Long id
+    ) {
+        Long companyId = extractCompanyId(authHeader);
+        return ResponseEntity.ok(scheduleDbService.getScheduleDetail(id, companyId));
     }
 
     @PostMapping
@@ -42,14 +46,22 @@ public class ScheduleDbController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteSchedule(@PathVariable Long id) {
-        scheduleDbService.deleteSchedule(id);
+    public ResponseEntity<Void> deleteSchedule(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable Long id
+    ) {
+        Long companyId = extractCompanyId(authHeader);
+        scheduleDbService.deleteSchedule(id, companyId);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}/complete")
-    public ResponseEntity<ScheduleDbDetailResponseDto> completeSchedule(@PathVariable Long id) {
-        return ResponseEntity.ok(scheduleDbService.completeSchedule(id));
+    public ResponseEntity<ScheduleDbDetailResponseDto> completeSchedule(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable Long id
+    ) {
+        Long companyId = extractCompanyId(authHeader);
+        return ResponseEntity.ok(scheduleDbService.completeSchedule(id, companyId));
     }
 
     private Long extractCompanyId(String authHeader) {
