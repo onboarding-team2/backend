@@ -60,7 +60,13 @@ public class DbScheduleService {
                 .orElseThrow(() -> new IllegalArgumentException("기업을 찾을 수 없습니다. id=" + companyId));
 
         List<Employee> targetEmployees = request.getEmployeeIds() != null && !request.getEmployeeIds().isEmpty()
-                ? employeeRepository.findAllById(request.getEmployeeIds()) : new ArrayList<>();
+                ? employeeRepository.findByIdInAndCompany_Id(request.getEmployeeIds(), companyId) : new ArrayList<>();
+
+        if (request.getEmployeeIds() != null
+                && !request.getEmployeeIds().isEmpty()  // 연관가입자가 없는 경우 기업 전체가 대상이므로 Empty 검증
+                && targetEmployees.size() != request.getEmployeeIds().size()) {
+            throw new IllegalArgumentException("유효하지 않은 가입자가 포함되어 있습니다.");
+        }
 
         DbSchedule schedule = DbSchedule.builder()
                 .title(request.getTitle())
