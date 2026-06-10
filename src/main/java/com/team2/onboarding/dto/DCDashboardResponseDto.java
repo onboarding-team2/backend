@@ -1,6 +1,7 @@
 package com.team2.onboarding.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.team2.onboarding.enums.PaymentCycle;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -33,4 +34,7 @@ public class DCDashboardResponseDto {
 
     @JsonProperty("irp_account_not_opened")
     private long irpAccountNotOpened;
+
+    @JsonProperty("payment_cycle")
+    private PaymentCycle paymentCycle;
 }
