@@ -2,6 +2,7 @@ package com.team2.onboarding.controller;
 
 import com.team2.onboarding.dto.DcMemberItemDto;
 import com.team2.onboarding.dto.EmployeeDetailResponseDto;
+import com.team2.onboarding.dto.EmployeeDetailResponseDto;
 import com.team2.onboarding.security.JwtTokenProvider;
 import com.team2.onboarding.service.DCService;
 import com.team2.onboarding.service.EmployeeService;
