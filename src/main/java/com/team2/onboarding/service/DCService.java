@@ -107,6 +107,7 @@ public class DCService {
                     return DcMemberItemDto.builder()
                             .id(e.getId())
                             .name(e.getName())
+                            .rrnMasked(maskRrn(e.getRrn()))
                             .position(type != null ? type.getDescription() : null)
                             .startDate(e.getStartDate())
                             .joinDate(erd != null ? erd.getJoinDate() : null)
@@ -118,6 +119,11 @@ public class DCService {
                             .build();
                 })
                 .toList();
+    }
+
+    private String maskRrn(String rrn) {
+        if (rrn == null || rrn.length() < 7) return rrn;
+        return rrn.substring(0, 6) + "-*******";
     }
 
     public Object getDeadlines(String companyId) {
