@@ -162,6 +162,7 @@ public class EmployeeService {
                 .startDate(e.getStartDate())
                 .terminationDate(e.getTerminationDate())
                 .defaultOption(null)
+                .hasIrpAccount(r.getHasIrpAccount())
                 .balance(null)
                 .status(e.getTerminationDate() == null ? "재직" : "퇴직")
                 .build();
@@ -198,6 +199,7 @@ public class EmployeeService {
                 .effectiveDate(r.getEffectiveDate())
                 .terminationDate(e.getTerminationDate())
                 .defaultOption(r.getDefaultOption())
+                .hasIrpAccount(r.getHasIrpAccount())
                 .balance(null)
                 .status(e.getTerminationDate() == null ? "재직" : "퇴직")
                 .build();
