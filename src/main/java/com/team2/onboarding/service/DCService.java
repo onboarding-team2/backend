@@ -34,7 +34,7 @@ public class DCService {
     public DCDashboardResponseDto getDashboard(String companyId) {
         Long id = Long.parseLong(companyId);
 
-        long totalBalance = 0L;
+        long totalBalance = contributionRepository.sumPaidContributionByCompanyId(id);;
 
         long totalEmployee = employeeRepository.countByCompany_Id(id);
 
