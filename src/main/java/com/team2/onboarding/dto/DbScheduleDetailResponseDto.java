@@ -2,7 +2,7 @@ package com.team2.onboarding.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.team2.onboarding.entity.Employee;
-import com.team2.onboarding.entity.ScheduleDb;
+import com.team2.onboarding.entity.DbSchedule;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -12,7 +12,7 @@ import java.util.List;
 
 @Getter
 @Builder
-public class ScheduleDbDetailResponseDto {
+public class DbScheduleDetailResponseDto {
 
     private Long id;
     private String title;
@@ -26,8 +26,8 @@ public class ScheduleDbDetailResponseDto {
     private String description;
     private String status;
 
-    @JsonProperty("d_day")
-    private String dDay;
+    @JsonProperty("d_day")  // JPA 네이밍컨벤션으로 인해 JSON 중복 key 발생을 막기 위한 변수명 설정
+    private String dayCount;
 
     @JsonProperty("company_name")
     private String companyName;
@@ -53,22 +53,22 @@ public class ScheduleDbDetailResponseDto {
         private String companyName;
     }
 
-    public static ScheduleDbDetailResponseDto from(ScheduleDb schedule, List<Employee> employees) {
+    public static DbScheduleDetailResponseDto from(DbSchedule schedule) {
         LocalDate today = LocalDate.now();
         long days = ChronoUnit.DAYS.between(today, schedule.getDueDate());
-        String dDay;
+        String dayCount;
         if ("DONE".equals(schedule.getStatus())) {
-            dDay = "완료";
+            dayCount = "완료";
         } else if (days < 0) {
-            dDay = Math.abs(days) + "일 초과";
+            dayCount = Math.abs(days) + "일 초과";
         } else if (days == 0) {
-            dDay = "D-Day";
+            dayCount = "D-Day";
         } else {
-            dDay = days + "일 전";
+            dayCount = days + "일 전";
         }
 
-        List<TargetEmployeeDto> employeeDtos = employees.stream()
-                .map(e -> TargetEmployeeDto.builder()
+        List<TargetEmployeeDto> employeeDtos = schedule.getTargetEmployees().stream()
+                .map(e -> DbScheduleDetailResponseDto.TargetEmployeeDto.builder()
                         .employeeId(e.getId())
                         .name(e.getName())
                         .companyName(e.getCompany() != null ? e.getCompany().getCompanyName() : null)
@@ -80,14 +80,14 @@ public class ScheduleDbDetailResponseDto {
         String planType = schedule.getCompany() != null && schedule.getCompany().getPlanType() != null
                 ? schedule.getCompany().getPlanType().name() : null;
 
-        return ScheduleDbDetailResponseDto.builder()
+        return DbScheduleDetailResponseDto.builder()
                 .id(schedule.getId())
                 .title(schedule.getTitle())
                 .dueDate(schedule.getDueDate())
                 .createdDate(schedule.getCreatedDate())
                 .description(schedule.getDescription())
                 .status(schedule.getStatus())
-                .dDay(dDay)
+                .dayCount(dayCount)
                 .companyName(companyName)
                 .brn(brn)
                 .planType(planType)

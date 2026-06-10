@@ -1,7 +1,7 @@
 package com.team2.onboarding.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.team2.onboarding.entity.ScheduleDc;
+import com.team2.onboarding.entity.DbSchedule;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -11,7 +11,7 @@ import java.util.List;
 
 @Getter
 @Builder
-public class ScheduleDcResponseDto {
+public class DbScheduleResponseDto {
 
     @JsonProperty("total_count")
     private long totalCount;
@@ -22,11 +22,11 @@ public class ScheduleDcResponseDto {
     @JsonProperty("overdue_count")
     private long overdueCount;
 
-    private List<ScheduleDcItemDto> schedules;
+    private List<ScheduleDbItemDto> schedules;
 
     @Getter
     @Builder
-    public static class ScheduleDcItemDto {
+    public static class ScheduleDbItemDto {
         private Long id;
         private String title;
 
@@ -35,18 +35,18 @@ public class ScheduleDcResponseDto {
 
         private String status;
 
-        @JsonProperty("d_day")
+        @JsonProperty("d_day")  // JPA 네이밍컨벤션으로 인해 JSON 중복 key 발생을 막기 위한 변수명 설정
         private String dayCount;
     }
 
-    public static ScheduleDcResponseDto of(List<ScheduleDc> scheduleList) {
+    public static DbScheduleResponseDto of(List<DbSchedule> scheduleList) {
         LocalDate today = LocalDate.now();
 
-        List<ScheduleDcItemDto> items = scheduleList.stream()
+        List<ScheduleDbItemDto> items = scheduleList.stream()
                 .map(s -> {
                     long days = ChronoUnit.DAYS.between(today, s.getDueDate());
                     String dayCount;
-                    if ("완료".equals(s.getStatus())) {
+                    if ("DONE".equals(s.getStatus())) {
                         dayCount = "완료";
                     } else if (days < 0) {
                         dayCount = "D+" + Math.abs(days);
@@ -55,7 +55,8 @@ public class ScheduleDcResponseDto {
                     } else {
                         dayCount = "D-" + days;
                     }
-                    return ScheduleDcItemDto.builder()
+
+                    return ScheduleDbItemDto.builder()
                             .id(s.getId())
                             .title(s.getTitle())
                             .dueDate(s.getDueDate())
@@ -66,11 +67,11 @@ public class ScheduleDcResponseDto {
                 .toList();
 
         long totalCount = items.stream()
-                .filter(i -> !"완료".equals(i.getStatus()))
+                .filter(i -> !"DONE".equals(i.getStatus()))
                 .count();
 
         long imminentCount = scheduleList.stream()
-                .filter(s -> !"완료".equals(s.getStatus()))
+                .filter(s -> !"DONE".equals(s.getStatus()))
                 .filter(s -> {
                     long days = ChronoUnit.DAYS.between(today, s.getDueDate());
                     return days >= 0 && days <= 14;
@@ -78,10 +79,11 @@ public class ScheduleDcResponseDto {
                 .count();
 
         long overdueCount = scheduleList.stream()
-                .filter(s -> !"완료".equals(s.getStatus()) && s.getDueDate().isBefore(today))
+                .filter(s -> !"DONE".equals(s.getStatus()))
+                .filter(s -> s.getDueDate().isBefore(today))
                 .count();
 
-        return ScheduleDcResponseDto.builder()
+        return DbScheduleResponseDto.builder()
                 .totalCount(totalCount)
                 .imminentCount(imminentCount)
                 .overdueCount(overdueCount)
