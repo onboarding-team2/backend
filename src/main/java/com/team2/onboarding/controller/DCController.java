@@ -2,7 +2,7 @@ package com.team2.onboarding.controller;
 
 import com.team2.onboarding.dto.DcMemberItemDto;
 import com.team2.onboarding.dto.EmployeeDetailResponseDto;
-import com.team2.onboarding.dto.EmployeeDetailResponseDto;
+import com.team2.onboarding.dto.PageResponse;
 import com.team2.onboarding.security.JwtTokenProvider;
 import com.team2.onboarding.service.DCService;
 import com.team2.onboarding.service.EmployeeService;
@@ -28,9 +28,21 @@ public class DCController {
     }
 
     @GetMapping("/members")
-    public ResponseEntity<List<DcMemberItemDto>> getMembers(@RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<PageResponse<DcMemberItemDto>> getMembers(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) List<String> status,
+            @RequestParam(required = false) List<String> type,
+            @RequestParam(required = false) List<String> irp,
+            @RequestParam(name = "default", required = false) List<String> defaultOption,
+            @RequestParam(required = false) List<String> contribution,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
         String companyId = extractCompanyId(authHeader);
-        return ResponseEntity.ok(dcService.getMembers(companyId));
+        return ResponseEntity.ok(
+                dcService.getMembers(companyId, name, status, type, irp, defaultOption, contribution, page, size)
+        );
     }
 
     @GetMapping("/members/{id}")

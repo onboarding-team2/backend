@@ -3,10 +3,12 @@ package com.team2.onboarding.service;
 import com.team2.onboarding.dto.DCDashboardResponseDto;
 import com.team2.onboarding.dto.DefaultOptionMemberDto;
 import com.team2.onboarding.dto.DcMemberItemDto;
+import com.team2.onboarding.dto.PageResponse;
 import com.team2.onboarding.entity.CompanyRetirementDc;
 import com.team2.onboarding.entity.Employee;
 import com.team2.onboarding.entity.EmployeeRetirementDc;
 import com.team2.onboarding.enums.EmployeeType;
+import com.team2.onboarding.enums.PaymentCycle;
 import com.team2.onboarding.repository.CompanyRetirementDcRepository;
 import com.team2.onboarding.repository.ContributionRepository;
 import com.team2.onboarding.repository.EmployeeRepository;
@@ -15,9 +17,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.Collator;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -34,7 +38,7 @@ public class DCService {
     public DCDashboardResponseDto getDashboard(String companyId) {
         Long id = Long.parseLong(companyId);
 
-        long totalBalance = 0L;
+        long totalBalance = contributionRepository.sumPaidContributionByCompanyId(id);;
 
         long totalEmployee = employeeRepository.countByCompany_Id(id);
 
@@ -48,16 +52,24 @@ public class DCService {
 
         long thisMonthContribution = 0L;
         String contributionDueDate = null;
-        if (crd != null) {
-            LocalDate now = LocalDate.now();
-            LocalDate start = now.withDayOfMonth(1);
-            LocalDate end = now.withDayOfMonth(now.lengthOfMonth());
-            var thisMonth = contributionRepository
-                    .findTopByCompanyRetirementDcAndDueDateBetweenOrderByDueDateAsc(crd, start, end);
-            if (thisMonth.isPresent()) {
-                thisMonthContribution = thisMonth.get().getContributionAmount();
-                contributionDueDate = thisMonth.get().getDueDate().toString();
-            }
+//        if (crd != null) {
+//            LocalDate now = LocalDate.now();
+//            LocalDate start = now.withDayOfMonth(1);
+//            LocalDate end = now.withDayOfMonth(now.lengthOfMonth());
+//            var thisMonth = contributionRepository
+//                    .findTopByCompanyRetirementDcAndDueDateBetweenOrderByDueDateAsc(crd, start, end);
+//            if (thisMonth.isPresent()) {
+//                thisMonthContribution = thisMonth.get().getContributionAmount();
+//                contributionDueDate = thisMonth.get().getDueDate().toString();
+//            }
+//        }
+        LocalDate now = LocalDate.now();
+        var nextContribution = contributionRepository
+                .findTopByCompanyRetirementDcAndDueDateGreaterThanEqualOrderByDueDateAsc(crd, now);
+
+        if (nextContribution.isPresent()) {
+            thisMonthContribution = nextContribution.get().getContributionAmount();
+            contributionDueDate = nextContribution.get().getDueDate().toString();
         }
 
         List<EmployeeRetirementDc> notSelectedList = employeeRetirementDcRepository
@@ -78,6 +90,11 @@ public class DCService {
             defaultOptionSummary = firstName + " 외 " + (defaultOptionNotSelected - 1) + "명";
         }
 
+        PaymentCycle paymentCycle =
+                companyRetirementDcRepository.findByCompanyId(id)
+                        .map(CompanyRetirementDc::getPaymentCycle)
+                        .orElse(null);
+
         return DCDashboardResponseDto.builder()
                 .totalBalance(totalBalance)
                 .totalEmployee(totalEmployee)
@@ -87,10 +104,26 @@ public class DCService {
                 .irpAccountNotOpened(irpAccountNotOpened)
                 .thisMonthContribution(thisMonthContribution)
                 .contributionDueDate(contributionDueDate)
+                .paymentCycle(paymentCycle)
                 .build();
     }
 
-    public List<DcMemberItemDto> getMembers(String companyId) {
+    /**
+     * 가입자 목록 조회(서버 필터링 + 페이지네이션).
+     * 필터 값은 프론트 칩과 동일한 한글값(재직/사원/보유/선정/납입완료 등)을 사용한다.
+     * 같은 카테고리 내 다중값은 OR, 카테고리 간에는 AND.
+     */
+    public PageResponse<DcMemberItemDto> getMembers(
+            String companyId,
+            String name,
+            List<String> status,
+            List<String> type,
+            List<String> irp,
+            List<String> defaultOption,
+            List<String> contribution,
+            int page,
+            int size
+    ) {
         Long id = Long.parseLong(companyId);
 
         List<Employee> employees = employeeRepository.findByCompany_Id(id);
@@ -100,14 +133,17 @@ public class DCService {
                 .stream()
                 .collect(Collectors.toMap(r -> r.getEmployee().getId(), r -> r));
 
-        return employees.stream()
+        Collator collator = Collator.getInstance(Locale.KOREAN);
+
+        List<DcMemberItemDto> all = employees.stream()
                 .map(e -> {
                     EmployeeRetirementDc erd = retirementMap.get(e.getId());
-                    EmployeeType type = e.getEmployeeType();
+                    EmployeeType empType = e.getEmployeeType();
                     return DcMemberItemDto.builder()
                             .id(e.getId())
                             .name(e.getName())
-                            .position(type != null ? type.getDescription() : null)
+                            .rrnMasked(maskRrn(e.getRrn()))
+                            .position(empType != null ? empType.getDescription() : null)
                             .startDate(e.getStartDate())
                             .joinDate(erd != null ? erd.getJoinDate() : null)
                             .hasIrpAccount(erd != null ? erd.getHasIrpAccount() : null)
@@ -117,7 +153,39 @@ public class DCService {
                             .status(e.getTerminationDate() != null ? "퇴직" : "재직")
                             .build();
                 })
+                .filter(dto -> matches(dto, name, status, type, irp, defaultOption, contribution))
+                .sorted((a, b) -> collator.compare(a.getName(), b.getName()))
                 .toList();
+
+        return PageResponse.of(all, page, size);
+    }
+
+    private boolean matches(
+            DcMemberItemDto dto,
+            String name,
+            List<String> status,
+            List<String> type,
+            List<String> irp,
+            List<String> defaultOption,
+            List<String> contribution
+    ) {
+        if (name != null && !name.isBlank() && (dto.getName() == null || !dto.getName().contains(name))) return false;
+        if (notIn(status, dto.getStatus())) return false;
+        if (notIn(type, dto.getPosition())) return false;
+        if (notIn(irp, "Y".equals(dto.getHasIrpAccount()) ? "보유" : "미보유")) return false;
+        if (notIn(defaultOption, "Y".equals(dto.getDefaultOption()) ? "선정" : "미선정")) return false;
+        if (notIn(contribution, Boolean.TRUE.equals(dto.getContributionPaid()) ? "납입완료" : "미납")) return false;
+        return true;
+    }
+
+    /** 필터가 지정돼 있고(비어있지 않고) 값이 거기 포함되지 않으면 true(=제외). */
+    private boolean notIn(List<String> filter, String value) {
+        return filter != null && !filter.isEmpty() && !filter.contains(value);
+    }
+
+    private String maskRrn(String rrn) {
+        if (rrn == null || rrn.length() < 7) return rrn;
+        return rrn.substring(0, 6) + "-*******";
     }
 
     public Object getSchedules(String companyId) {
