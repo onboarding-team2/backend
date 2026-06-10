@@ -3,6 +3,7 @@ package com.team2.onboarding.controller;
 import com.team2.onboarding.dto.DBDashboardResponseDto;
 import com.team2.onboarding.dto.DbMemberItemDto;
 import com.team2.onboarding.dto.EmployeeDetailResponseDto;
+import com.team2.onboarding.dto.PageResponse;
 import com.team2.onboarding.dto.PortfolioResponseDto;
 import com.team2.onboarding.security.JwtTokenProvider;
 import com.team2.onboarding.service.DBService;
@@ -38,9 +39,19 @@ public class DBController {
     }
 
     @GetMapping("/members")
-    public ResponseEntity<List<DbMemberItemDto>> getMembers(@RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<PageResponse<DbMemberItemDto>> getMembers(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) List<String> status,
+            @RequestParam(required = false) List<String> type,
+            @RequestParam(required = false) List<String> irp,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
         String companyId = extractCompanyId(authHeader);
-        return ResponseEntity.ok(dbService.getMembers(companyId));
+        return ResponseEntity.ok(
+                dbService.getMembers(companyId, name, status, type, irp, page, size)
+        );
     }
 
     @GetMapping("/members/{id}")

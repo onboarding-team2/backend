@@ -2,6 +2,7 @@ package com.team2.onboarding.service;
 
 import com.team2.onboarding.dto.DBDashboardResponseDto;
 import com.team2.onboarding.dto.DbMemberItemDto;
+import com.team2.onboarding.dto.PageResponse;
 import com.team2.onboarding.entity.CompanyRetirementDb;
 import com.team2.onboarding.entity.Employee;
 import com.team2.onboarding.entity.EmployeeRetirementDb;
@@ -16,7 +17,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.Collator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -71,7 +74,19 @@ public class DBService {
                 .build();
     }
 
-    public List<DbMemberItemDto> getMembers(String companyId) {
+    /**
+     * 가입자 목록 조회(서버 필터링 + 페이지네이션).
+     * DB형은 디폴트옵션/부담금 개념이 없어 status/type/irp 필터만 지원.
+     */
+    public PageResponse<DbMemberItemDto> getMembers(
+            String companyId,
+            String name,
+            List<String> status,
+            List<String> type,
+            List<String> irp,
+            int page,
+            int size
+    ) {
         Long id = Long.parseLong(companyId);
 
         List<Employee> employees = employeeRepository.findByCompany_Id(id);
@@ -81,15 +96,17 @@ public class DBService {
                 .stream()
                 .collect(Collectors.toMap(r -> r.getEmployee().getId(), r -> r));
 
-        return employees.stream()
+        Collator collator = Collator.getInstance(Locale.KOREAN);
+
+        List<DbMemberItemDto> all = employees.stream()
                 .map(e -> {
                     EmployeeRetirementDb erd = retirementMap.get(e.getId());
-                    EmployeeType type = e.getEmployeeType();
+                    EmployeeType empType = e.getEmployeeType();
                     return DbMemberItemDto.builder()
                             .id(e.getId())
                             .name(e.getName())
                             .rrnMasked(maskRrn(e.getRrn()))
-                            .position(type != null ? type.getDescription() : null)
+                            .position(empType != null ? empType.getDescription() : null)
                             .startDate(e.getStartDate())
                             .joinDate(erd != null ? erd.getJoinDate() : null)
                             .hasIrpAccount(erd != null ? erd.getHasIrpAccount() : null)
@@ -97,7 +114,23 @@ public class DBService {
                             .status(e.getTerminationDate() != null ? "퇴직" : "재직")
                             .build();
                 })
+                .filter(dto -> matches(dto, name, status, type, irp))
+                .sorted((a, b) -> collator.compare(a.getName(), b.getName()))
                 .toList();
+
+        return PageResponse.of(all, page, size);
+    }
+
+    private boolean matches(DbMemberItemDto dto, String name, List<String> status, List<String> type, List<String> irp) {
+        if (name != null && !name.isBlank() && (dto.getName() == null || !dto.getName().contains(name))) return false;
+        if (notIn(status, dto.getStatus())) return false;
+        if (notIn(type, dto.getPosition())) return false;
+        if (notIn(irp, "Y".equals(dto.getHasIrpAccount()) ? "보유" : "미보유")) return false;
+        return true;
+    }
+
+    private boolean notIn(List<String> filter, String value) {
+        return filter != null && !filter.isEmpty() && !filter.contains(value);
     }
 
     private String maskRrn(String rrn) {

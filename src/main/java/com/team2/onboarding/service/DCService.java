@@ -3,6 +3,7 @@ package com.team2.onboarding.service;
 import com.team2.onboarding.dto.DCDashboardResponseDto;
 import com.team2.onboarding.dto.DefaultOptionMemberDto;
 import com.team2.onboarding.dto.DcMemberItemDto;
+import com.team2.onboarding.dto.PageResponse;
 import com.team2.onboarding.entity.CompanyRetirementDc;
 import com.team2.onboarding.entity.Employee;
 import com.team2.onboarding.entity.EmployeeRetirementDc;
@@ -15,9 +16,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.Collator;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -90,11 +93,22 @@ public class DCService {
                 .build();
     }
 
-    public List<DcMemberItemDto> getMembers(String companyId) {
-        return getMembers(companyId, null);
-    }
-
-    public List<DcMemberItemDto> getMembers(String companyId, String filter) {
+    /**
+     * 가입자 목록 조회(서버 필터링 + 페이지네이션).
+     * 필터 값은 프론트 칩과 동일한 한글값(재직/사원/보유/선정/납입완료 등)을 사용한다.
+     * 같은 카테고리 내 다중값은 OR, 카테고리 간에는 AND.
+     */
+    public PageResponse<DcMemberItemDto> getMembers(
+            String companyId,
+            String name,
+            List<String> status,
+            List<String> type,
+            List<String> irp,
+            List<String> defaultOption,
+            List<String> contribution,
+            int page,
+            int size
+    ) {
         Long id = Long.parseLong(companyId);
 
         List<Employee> employees = employeeRepository.findByCompany_Id(id);
@@ -104,15 +118,17 @@ public class DCService {
                 .stream()
                 .collect(Collectors.toMap(r -> r.getEmployee().getId(), r -> r));
 
-        return employees.stream()
+        Collator collator = Collator.getInstance(Locale.KOREAN);
+
+        List<DcMemberItemDto> all = employees.stream()
                 .map(e -> {
                     EmployeeRetirementDc erd = retirementMap.get(e.getId());
-                    EmployeeType type = e.getEmployeeType();
+                    EmployeeType empType = e.getEmployeeType();
                     return DcMemberItemDto.builder()
                             .id(e.getId())
                             .name(e.getName())
                             .rrnMasked(maskRrn(e.getRrn()))
-                            .position(type != null ? type.getDescription() : null)
+                            .position(empType != null ? empType.getDescription() : null)
                             .startDate(e.getStartDate())
                             .joinDate(erd != null ? erd.getJoinDate() : null)
                             .hasIrpAccount(erd != null ? erd.getHasIrpAccount() : null)
@@ -122,22 +138,34 @@ public class DCService {
                             .status(e.getTerminationDate() != null ? "퇴직" : "재직")
                             .build();
                 })
-                .filter(dto -> matchesFilter(dto, filter))
+                .filter(dto -> matches(dto, name, status, type, irp, defaultOption, contribution))
+                .sorted((a, b) -> collator.compare(a.getName(), b.getName()))
                 .toList();
+
+        return PageResponse.of(all, page, size);
     }
 
-    /**
-     * 미처리 현황용 필터.
-     * - default-unset: 디폴트옵션 미선정(Y 아님)
-     * - irp-none: IRP 개설 미완료(Y 아님)
-     */
-    private boolean matchesFilter(DcMemberItemDto dto, String filter) {
-        if (filter == null || filter.isBlank()) return true;
-        return switch (filter) {
-            case "default-unset" -> !"Y".equals(dto.getDefaultOption());
-            case "irp-none" -> !"Y".equals(dto.getHasIrpAccount());
-            default -> true;
-        };
+    private boolean matches(
+            DcMemberItemDto dto,
+            String name,
+            List<String> status,
+            List<String> type,
+            List<String> irp,
+            List<String> defaultOption,
+            List<String> contribution
+    ) {
+        if (name != null && !name.isBlank() && (dto.getName() == null || !dto.getName().contains(name))) return false;
+        if (notIn(status, dto.getStatus())) return false;
+        if (notIn(type, dto.getPosition())) return false;
+        if (notIn(irp, "Y".equals(dto.getHasIrpAccount()) ? "보유" : "미보유")) return false;
+        if (notIn(defaultOption, "Y".equals(dto.getDefaultOption()) ? "선정" : "미선정")) return false;
+        if (notIn(contribution, Boolean.TRUE.equals(dto.getContributionPaid()) ? "납입완료" : "미납")) return false;
+        return true;
+    }
+
+    /** 필터가 지정돼 있고(비어있지 않고) 값이 거기 포함되지 않으면 true(=제외). */
+    private boolean notIn(List<String> filter, String value) {
+        return filter != null && !filter.isEmpty() && !filter.contains(value);
     }
 
     private String maskRrn(String rrn) {
