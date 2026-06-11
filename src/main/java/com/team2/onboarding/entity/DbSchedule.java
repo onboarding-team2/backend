@@ -41,7 +41,7 @@ public class DbSchedule {
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-            name = "schedule_employees",
+            name = "db_schedule_employees",
             joinColumns = @JoinColumn(name = "schedule_id"),
             inverseJoinColumns = @JoinColumn(name = "employee_id")
     )
