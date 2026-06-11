@@ -1,28 +1,20 @@
 package com.team2.onboarding.service;
 
 import com.team2.onboarding.dto.CompanyInfoDto;
+import com.team2.onboarding.dto.ContributionChartItemDto;
 import com.team2.onboarding.dto.DcContributionStatusResponseDto;
-import com.team2.onboarding.dto.MonthlyPaymentDto;
 import com.team2.onboarding.entity.Company;
 import com.team2.onboarding.entity.CompanyRetirementDc;
 import com.team2.onboarding.entity.Contribution;
-import com.team2.onboarding.enums.PlanType;
-import com.team2.onboarding.repository.CompanyRepository;
-import com.team2.onboarding.repository.CompanyRetirementDcRepository;
-import com.team2.onboarding.repository.ContributionRepository;
-import com.team2.onboarding.repository.EmployeeRepository;
-import com.team2.onboarding.repository.EmployeeRetirementDcRepository;
-import com.team2.onboarding.entity.Company;
-import com.team2.onboarding.entity.CompanyRetirementDc;
+import com.team2.onboarding.enums.PaymentCycle;
 import com.team2.onboarding.enums.PlanType;
 import com.team2.onboarding.repository.*;
-import com.team2.onboarding.dto.CompanyInfoDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.Comparator;
 import java.util.List;
+import java.util.stream.IntStream;
 
 @Service
 @RequiredArgsConstructor
@@ -78,31 +70,58 @@ public class CompanyService {
         CompanyRetirementDc crd = companyRetirementDcRepository.findByCompanyId(id)
                 .orElseThrow(() -> new RuntimeException("DC 퇴직연금 정보 없음"));
 
-        int year = LocalDate.now().getYear();
-        LocalDate start = LocalDate.of(year, 1, 1);
-        LocalDate end = LocalDate.of(year, 12, 31);
+        PaymentCycle cycle = crd.getPaymentCycle();
+        LocalDate now = LocalDate.now();
+        List<ContributionChartItemDto> items;
 
-        List<Contribution> contributions = contributionRepository
-                .findByCompanyRetirementDcAndDueDateBetween(crd, start, end);
-
-        long expectedAmount = contributions.stream()
-                .mapToLong(Contribution::getContributionAmount)
-                .max()
-                .orElse(0L);
-
-        List<MonthlyPaymentDto> payments = contributions.stream()
-                .sorted(Comparator.comparing(Contribution::getDueDate))
-                .map(c -> MonthlyPaymentDto.builder()
-                        .month(c.getDueDate().getMonthValue())
-                        .amount(c.getContributionAmount())
-                        .paid(c.getPaidDate() != null)
-                        .build())
-                .toList();
+        if (cycle == PaymentCycle.MONTHLY) {
+            items = IntStream.range(0, 4)
+                    .mapToObj(i -> now.minusMonths(3 - i))
+                    .map(month -> buildChartItem(
+                            month.getMonthValue() + "월",
+                            crd,
+                            month.withDayOfMonth(1),
+                            month.withDayOfMonth(month.lengthOfMonth())))
+                    .toList();
+        } else if (cycle == PaymentCycle.QUARTERLY) {
+            int year = now.getYear();
+            items = IntStream.rangeClosed(1, 4)
+                    .mapToObj(q -> {
+                        LocalDate start = LocalDate.of(year, (q - 1) * 3 + 1, 1);
+                        return buildChartItem(q + "분기", crd, start, start.plusMonths(3).minusDays(1));
+                    })
+                    .toList();
+        } else {
+            int currentYear = now.getYear();
+            items = IntStream.range(0, 3)
+                    .mapToObj(i -> currentYear - 2 + i)
+                    .map(year -> buildChartItem(
+                            String.valueOf(year),
+                            crd,
+                            LocalDate.of(year, 1, 1),
+                            LocalDate.of(year, 12, 31)))
+                    .toList();
+        }
 
         return DcContributionStatusResponseDto.builder()
-                .year(year)
-                .expectedAmount(expectedAmount)
-                .payments(payments)
+                .cycle(cycle.name())
+                .items(items)
                 .build();
+    }
+
+    private ContributionChartItemDto buildChartItem(String label, CompanyRetirementDc crd, LocalDate start, LocalDate end) {
+        List<Contribution> list = contributionRepository.findByCompanyRetirementDcAndDueDateBetween(crd, start, end);
+        long paidAmount = list.stream()
+                .filter(c -> "납입완료".equals(c.getStatus()))
+                .mapToLong(Contribution::getContributionAmount)
+                .sum();
+        if (paidAmount > 0) {
+            return ContributionChartItemDto.builder().label(label).amount(paidAmount).paid(true).build();
+        }
+        long expectedAmount = list.stream()
+                .mapToLong(Contribution::getContributionAmount)
+                .findFirst()
+                .orElse(0L);
+        return ContributionChartItemDto.builder().label(label).amount(expectedAmount).paid(false).build();
     }
 }
