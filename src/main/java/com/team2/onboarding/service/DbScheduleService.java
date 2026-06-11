@@ -94,6 +94,7 @@ public class DbScheduleService {
         DbSchedule schedule = dbScheduleRepository.findByIdAndCompany_Id(scheduleId, companyId)
                 .orElseThrow(() -> new EntityNotFoundException("일정을 찾을 수 없습니다. id=" + scheduleId));
         schedule.complete();
+        dbScheduleRepository.save(schedule);
         return DbScheduleDetailResponseDto.from(schedule);
     }
 }
