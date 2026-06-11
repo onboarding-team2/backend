@@ -9,6 +9,7 @@ import com.team2.onboarding.entity.Employee;
 import com.team2.onboarding.entity.EmployeeRetirementDc;
 import com.team2.onboarding.enums.EmployeeType;
 import com.team2.onboarding.enums.PaymentCycle;
+import com.team2.onboarding.repository.AnnualSalaryRepository;
 import com.team2.onboarding.repository.CompanyRetirementDcRepository;
 import com.team2.onboarding.repository.ContributionRepository;
 import com.team2.onboarding.repository.EmployeeRepository;
@@ -34,11 +35,28 @@ public class DCService {
     private final EmployeeRetirementDcRepository employeeRetirementDcRepository;
     private final CompanyRetirementDcRepository companyRetirementDcRepository;
     private final ContributionRepository contributionRepository;
+    private final AnnualSalaryRepository annualSalaryRepository;
 
     public DCDashboardResponseDto getDashboard(String companyId) {
         Long id = Long.parseLong(companyId);
 
-        long totalBalance = contributionRepository.sumPaidContributionByCompanyId(id);;
+        CompanyRetirementDc crdForCycle = companyRetirementDcRepository.findByCompanyId(id).orElse(null);
+        PaymentCycle cycle = crdForCycle != null ? crdForCycle.getPaymentCycle() : null;
+
+        long sum2025 = annualSalaryRepository.sumContributionByCompanyAndYear(id, "2025");
+        long sum2026 = annualSalaryRepository.sumContributionByCompanyAndYear(id, "2026");
+
+        long partial2026;
+        if (cycle == PaymentCycle.MONTHLY) {
+            int currentMonth = LocalDate.now().getMonthValue();
+            partial2026 = Math.round(sum2026 * (currentMonth - 1.0) / 12.0);
+        } else if (cycle == PaymentCycle.QUARTERLY) {
+            partial2026 = Math.round(sum2026 / 4.0);
+        } else {
+            partial2026 = 0L;
+        }
+
+        long totalBalance = sum2025 + partial2026;
 
         long totalEmployee = employeeRepository.countByCompany_Id(id);
 
@@ -48,7 +66,7 @@ public class DCService {
         long irpAccountNotOpened = employeeRetirementDcRepository
                 .countByEmployee_Company_IdAndHasIrpAccount(id, "N");
 
-        CompanyRetirementDc crd = companyRetirementDcRepository.findByCompanyId(id).orElse(null);
+        CompanyRetirementDc crd = crdForCycle;
 
         long thisMonthContribution = 0L;
         String contributionDueDate = null;
@@ -90,10 +108,7 @@ public class DCService {
             defaultOptionSummary = firstName + " 외 " + (defaultOptionNotSelected - 1) + "명";
         }
 
-        PaymentCycle paymentCycle =
-                companyRetirementDcRepository.findByCompanyId(id)
-                        .map(CompanyRetirementDc::getPaymentCycle)
-                        .orElse(null);
+        PaymentCycle paymentCycle = cycle;
 
         return DCDashboardResponseDto.builder()
                 .totalBalance(totalBalance)
