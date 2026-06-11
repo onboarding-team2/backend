@@ -8,7 +8,6 @@ import java.util.List;
 @Getter
 @Builder
 public class DcContributionStatusResponseDto {
-    private int year;
-    private Long expectedAmount;
-    private List<MonthlyPaymentDto> payments;
+    private String cycle;
+    private List<ContributionChartItemDto> items;
 }

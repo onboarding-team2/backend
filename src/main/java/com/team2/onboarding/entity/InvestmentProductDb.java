@@ -33,6 +33,9 @@ public class InvestmentProductDb {
     @Column(name = "annual_return_rate", nullable = false, precision = 5, scale = 2)
     private BigDecimal annualReturnRate;
 
+    @Column(name = "purchase_date", nullable = false)
+    private LocalDate purchaseDate;
+
     @Column(name = "maturity_date")
     private LocalDate maturityDate;
 
@@ -51,11 +54,12 @@ public class InvestmentProductDb {
     private CompanyRetirementDb companyRetirementDb;
 
     @Builder
-    private InvestmentProductDb(Long principal, BigDecimal annualReturnRate, LocalDate maturityDate,
-            Long confirmedAmount, String status, InvestmentProductMaster productMaster,
-            CompanyRetirementDb companyRetirementDb) {
+    private InvestmentProductDb(Long principal, BigDecimal annualReturnRate, LocalDate purchaseDate,
+            LocalDate maturityDate, Long confirmedAmount, String status,
+            InvestmentProductMaster productMaster, CompanyRetirementDb companyRetirementDb) {
         this.principal = principal;
         this.annualReturnRate = annualReturnRate;
+        this.purchaseDate = purchaseDate != null ? purchaseDate : LocalDate.now();
         this.maturityDate = maturityDate;
         this.confirmedAmount = confirmedAmount;
         this.status = status != null ? status : "운용중";

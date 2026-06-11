@@ -41,8 +41,10 @@ public class DataInitializer {
     private final AnnualSalaryDbRepository annualSalaryDbRepository;
     private final FeePaymentDbRepository feePaymentDbRepository;
     private final ReserveDbRepository reserveDbRepository;
+    private final AssetClassMasterRepository assetClassMasterRepository;
     private final InvestmentProductMasterRepository investmentProductMasterRepository;
     private final InvestmentProductDbRepository investmentProductDbRepository;
+    private final ReturnHistoryDbRepository returnHistoryDbRepository;
 
     // ── 직원 이름/생년 풀 (40명) ──────────────────────────────────
     private static final String[][] EMPLOYEE_POOL = {
@@ -69,7 +71,8 @@ public class DataInitializer {
             if (companyRepository.count() > 0) return;
 
             int year = LocalDate.now().getYear();
-            List<InvestmentProductMaster> productMasters = createProductMasters();
+            List<AssetClassMaster> assetClasses = createAssetClassMasters();
+            List<InvestmentProductMaster> productMasters = createProductMasters(assetClasses);
 
             // ═══════════════════════════════════════════════════════
             // DC 회사 (5개) - 기존 로직 유지
@@ -268,6 +271,7 @@ public class DataInitializer {
                 .planType(PlanType.DB)
                 .contractDate(contractDate)
                 .fiscalMonth(12)
+                .targetReturnRate(new BigDecimal("3.50"))
                 .company(company)
                 .build());
 
@@ -365,49 +369,52 @@ public class DataInitializer {
         long fundedAmount = insertInvestmentProducts(
                 portfolioType, crdb, productMasters, totalBenefitObligation, targetFundingRatio);
         insertReserve(crdb, baseDate, totalBenefitObligation, fundedAmount);
+        insertReturnHistory(crdb, fundedAmount, year);
     }
 
     // ─────────────────────────────────────────────────────────────
     // 운용상품 매수 — 포트폴리오 유형별 상품 구성 + targetFundingRatio 스케일링
+    // masterIdx: 0=IBK정기예금, 1=IBK GIC, 2=ELB, 3=KODEX회사채, 4=ACE국고채,
+    //            5=국공채펀드, 6=TIGER TDF2040, 7=KODEX TRF3070, 8=한국밸런스펀드,
+    //            9=KODEX200, 10=TIGER코스피, 11=KODEX코스닥150, 12=ACE배당성장,
+    //           13=TIGER나스닥100, 14=KODEX S&P500, 15=SOL배당다우존스,
+    //           16=ACE미국테크TOP10, 17=TIGER차이나전기차
+    // maturityMonthsOffset: null = ETF(만기 없음), 양수 = 운용중, 음수 = 만기완료
     // ─────────────────────────────────────────────────────────────
     private long insertInvestmentProducts(int portfolioType, CompanyRetirementDb crdb,
                                           List<InvestmentProductMaster> masters,
                                           long totalBenefitObligation,
                                           double targetFundingRatio) {
-        // {masterIdx, 비율(%), maturityMonthsOffset, status}
+        // {masterIdx, 비율(%), maturityMonthsOffset(null=ETF), status}
         Object[][] portfolio = switch (portfolioType) {
-            case 0 -> new Object[][]{ // 보수형 — 예금·보험 위주
-                    {0, 35.0,  6, "운용중"},  // IBK 정기예금
-                    {1, 30.0, 10, "운용중"},  // KB 정기예금
-                    {2, 25.0,  8, "운용중"},  // 신한은행 정기예금
-                    {3, 10.0, 14, "운용중"},  // 삼성생명 이율보증형
+            case 0 -> new Object[][]{ // 보수형 — 원리금보장형만
+                    {0, 50.0,  6, "운용중"},  // IBK 정기예금 1년
+                    {1, 30.0, 12, "운용중"},  // IBK GIC 2년
+                    {2, 20.0,  8, "운용중"},  // ELB 지수연계형
             };
-            case 1 -> new Object[][]{ // 균형형 — 예금 + ELB 혼합
-                    {0, 25.0,  4, "운용중"},  // IBK 정기예금
-                    {1, 20.0,  8, "운용중"},  // KB 정기예금
-                    {3, 15.0, 12, "운용중"},  // 삼성생명
-                    {4, 10.0, 16, "운용중"},  // 한화생명
-                    {5, 18.0,  6, "운용중"},  // 미래에셋 ELB
-                    {6, 12.0,  3, "운용중"},  // NH투자 ELB
+            case 1 -> new Object[][]{ // 균형형 — 원리금보장형 + 채권 + 혼합
+                    {0, 25.0,  4, "운용중"},  // IBK 정기예금 1년
+                    {1, 15.0, 10, "운용중"},  // IBK GIC 2년
+                    {3, 25.0, null, "운용중"}, // KODEX 회사채 ETF
+                    {6, 20.0, null, "운용중"}, // TIGER TDF2040
+                    {7, 15.0, null, "운용중"}, // KODEX TRF3070
             };
-            case 2 -> new Object[][]{ // 성장형 — ELB 위주
-                    {0, 20.0,  4, "운용중"},  // IBK 정기예금
-                    {2, 10.0,  8, "운용중"},  // 신한은행
-                    {5, 25.0,  6, "운용중"},  // 미래에셋 ELB
-                    {6, 25.0,  9, "운용중"},  // NH투자 ELB
-                    {7, 20.0,  5, "운용중"},  // KB증권 ELB
+            case 2 -> new Object[][]{ // 성장형 — 원리금보장형 + 채권 + 국내외주식
+                    {0,  15.0,  3, "운용중"},  // IBK 정기예금 1년
+                    {3,  20.0, null, "운용중"}, // KODEX 회사채 ETF
+                    {9,  30.0, null, "운용중"}, // KODEX 200
+                    {13, 20.0, null, "운용중"}, // TIGER 미국나스닥100
+                    {14, 15.0, null, "운용중"}, // KODEX 미국S&P500TR
             };
             default -> new Object[][]{ // 혼합형 — 만기완료 포함
-                    {0, 20.0,  1, "운용중"},   // IBK 정기예금, 만기 임박
-                    {1, 17.5,  2, "운용중"},   // KB 정기예금
-                    {3, 22.5,  6, "운용중"},   // 삼성생명
-                    {5, 15.0, 12, "운용중"},   // 미래에셋 ELB
-                    {7, 10.0,  3, "운용중"},   // KB증권 ELB
-                    {2, 15.0, -12, "만기완료"}, // 신한은행, 작년 만기
+                    {0,  20.0,  1, "운용중"},   // IBK 정기예금 (만기임박)
+                    {4,  17.5, null, "운용중"},  // ACE 국고채10년
+                    {7,  22.5, null, "운용중"},  // KODEX TRF3070
+                    {9,  25.0, null, "운용중"},  // KODEX 200
+                    {2,  15.0, -12, "만기완료"}, // ELB (작년 만기완료)
             };
         };
 
-        // 비율 합계 = 100%일 때 예상 funded/benefitObligation 비율 계산
         double normalizedFundedRatio = 0.0;
         for (Object[] item : portfolio) {
             int masterIdx = (int) item[0];
@@ -415,19 +422,22 @@ public class DataInitializer {
             double rate = masters.get(masterIdx).getAnnualReturnRate().doubleValue();
             normalizedFundedRatio += ratio / 100.0 * (1.0 + rate / 100.0);
         }
-        // scalingFactor: 원금 총합을 조정해 funded_amount ≈ benefitObligation × targetRatio%
         double scalingFactor = (targetFundingRatio / 100.0) / normalizedFundedRatio;
 
         long totalFunded = 0L;
         for (Object[] item : portfolio) {
-            int masterIdx  = (int)    item[0];
-            double ratio   = (double) item[1];
-            int monthsOffset = (int)  item[2];
-            String status  = (String) item[3];
+            int masterIdx        = (int)    item[0];
+            double ratio         = (double) item[1];
+            Object monthsOffsetObj = item[2];
+            String status        = (String) item[3];
 
             long principal = Math.round(totalBenefitObligation * ratio / 100.0 * scalingFactor);
             InvestmentProductMaster master = masters.get(masterIdx);
             BigDecimal rate = master.getAnnualReturnRate();
+
+            LocalDate maturityDate = (monthsOffsetObj != null)
+                    ? LocalDate.now().plusMonths((int) monthsOffsetObj)
+                    : null;
 
             long evaluatedAmount = Math.round(principal * (1 + rate.doubleValue() / 100.0));
             Long confirmedAmount = "만기완료".equals(status) ? evaluatedAmount : null;
@@ -436,7 +446,8 @@ public class DataInitializer {
             investmentProductDbRepository.save(InvestmentProductDb.builder()
                     .principal(principal)
                     .annualReturnRate(rate)
-                    .maturityDate(LocalDate.now().plusMonths(monthsOffset))
+                    .purchaseDate(LocalDate.now().minusMonths(12))
+                    .maturityDate(maturityDate)
                     .confirmedAmount(confirmedAmount)
                     .status(status)
                     .productMaster(master)
@@ -477,28 +488,114 @@ public class DataInitializer {
     }
 
     // ─────────────────────────────────────────────────────────────
-    // 운용상품 마스터 (전역)
+    // 월별 수익률 이력 — 36개월 (3년치 차트용)
+    // 36번째 포인트가 currentFundedAmount, 역산으로 이전 시점 적립금 생성
     // ─────────────────────────────────────────────────────────────
-    private List<InvestmentProductMaster> createProductMasters() {
+    private void insertReturnHistory(CompanyRetirementDb crdb, long currentFundedAmount, int year) {
+        double targetAnnualReturn = crdb.getTargetReturnRate().doubleValue();
+        Random rnd = new Random(crdb.getId());
+
+        double[] returnRates = new double[36];
+        double[] growthFactors = new double[36];
+        double compoundGrowth = 1.0;
+
+        for (int i = 0; i < 36; i++) {
+            double noise = (rnd.nextDouble() - 0.5) * 2.0; // ±1% 연환산 노이즈
+            returnRates[i] = Math.max(0.5, targetAnnualReturn + noise);
+            growthFactors[i] = 1.0 + returnRates[i] / 100.0 / 12.0;
+            compoundGrowth *= growthFactors[i];
+        }
+
+        long startingAmount = Math.round(currentFundedAmount / compoundGrowth);
+        long[] fundedAmounts = new long[36];
+        fundedAmounts[0] = startingAmount;
+        for (int i = 1; i < 35; i++) {
+            fundedAmounts[i] = Math.round(fundedAmounts[i - 1] * growthFactors[i]);
+        }
+        fundedAmounts[35] = currentFundedAmount; // 최종값 고정
+
+        LocalDate latestDate = LocalDate.of(year - 1, 12, 31);
+        for (int i = 0; i < 36; i++) {
+            LocalDate baseDate = latestDate.minusMonths(35 - i);
+            baseDate = baseDate.withDayOfMonth(baseDate.lengthOfMonth());
+            returnHistoryDbRepository.save(ReturnHistoryDb.builder()
+                    .baseDate(baseDate)
+                    .returnRate(BigDecimal.valueOf(returnRates[i]).setScale(2, RoundingMode.HALF_UP))
+                    .fundedAmount(fundedAmounts[i])
+                    .companyRetirementDb(crdb)
+                    .build());
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // 상품군 마스터 (asset_class_master)
+    // ─────────────────────────────────────────────────────────────
+    private List<AssetClassMaster> createAssetClassMasters() {
+        // {classCode, className, isRiskAsset, allowMulti, avgReturn3y, displayOrder}
         Object[][] data = {
-                // {productProvider, category, isPrincipalGuaranteed, annualReturnRate}
-                {"IBK기업은행",  "정기예금",        true, "3.50"},  // idx 0
-                {"KB국민은행",   "정기예금",        true, "3.20"},  // idx 1
-                {"신한은행",     "정기예금",        true, "3.00"},  // idx 2
-                {"삼성생명",     "이율보증형보험",   true, "2.80"},  // idx 3
-                {"한화생명",     "이율보증형보험",   true, "2.50"},  // idx 4
-                {"미래에셋증권", "ELB 및 ELD",      true, "4.20"},  // idx 5
-                {"NH투자증권",   "ELB 및 ELD",      true, "4.50"},  // idx 6
-                {"KB증권",       "ELB 및 ELD",      true, "3.80"},  // idx 7
-                {"한국투자증권", "ELB 및 ELD",      true, "4.00"},  // idx 8
+                {"DEPOSIT", "원리금보장형", false, false, "3.70", 1},
+                {"BOND",    "채권형",       false, false, "4.90", 2},
+                {"MIXED",   "혼합형/TDF",   true,  true,  "8.80", 3},
+                {"DOM_EQ",  "국내주식형",   true,  true,  "9.20", 4},
+                {"OVS_EQ",  "해외주식형",   true,  true, "16.20", 5},
+        };
+        List<AssetClassMaster> result = new ArrayList<>();
+        for (Object[] row : data) {
+            result.add(assetClassMasterRepository.save(AssetClassMaster.builder()
+                    .classCode((String) row[0])
+                    .className((String) row[1])
+                    .isRiskAsset((Boolean) row[2])
+                    .allowMulti((Boolean) row[3])
+                    .avgReturn3y(new BigDecimal((String) row[4]))
+                    .displayOrder((Integer) row[5])
+                    .build()));
+        }
+        return result;
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // 운용상품 마스터 (investment_product_master) — 18개
+    // ─────────────────────────────────────────────────────────────
+    private List<InvestmentProductMaster> createProductMasters(List<AssetClassMaster> ac) {
+        // {productName, provider, assetClassIdx, category, isPrinGuaranteed, annualRate, rate3y, feeRate, tag, isDefault}
+        Object[][] data = {
+            // ── DEPOSIT (ac[0]) ──────────────────────────────────────────────────────
+            {"IBK 정기예금 1년",            "IBK기업은행",      0, "정기예금",       true,  "3.60", "3.60", "0.0000", "기본",       true},  // 0
+            {"IBK GIC 2년",                 "IBK연금보험",      0, "이율보증형보험", true,  "3.40", "3.40", "0.0000", null,         false}, // 1
+            {"ELB 지수연계형",              "IBK투자증권",      0, "ELB 및 ELD",     true,  "4.10", "4.10", "0.0000", "수익률 1위", false}, // 2
+            // ── BOND (ac[1]) ─────────────────────────────────────────────────────────
+            {"KODEX 28-12 회사채(AA-)",     "삼성자산운용",     1, "ETF",            false, "5.80", "5.80", "0.0900", "수익률 1위", true},  // 3
+            {"ACE 국고채10년",              "한국투자신탁운용", 1, "ETF",            false, "4.90", "4.90", "0.0500", "안정",       false}, // 4
+            {"국공채 펀드",                 "IBK자산운용",      1, "펀드",           false, "4.00", "4.00", "0.2500", null,         false}, // 5
+            // ── MIXED (ac[2]) ────────────────────────────────────────────────────────
+            {"TIGER 글로벌멀티에셋TDF2040", "미래에셋자산운용", 2, "ETF",            false, "11.30","11.30","0.3900", "TDF",        true},  // 6
+            {"KODEX TRF3070",               "삼성자산운용",     2, "ETF",            false, "8.40", "8.40", "0.2400", "안정혼합",   false}, // 7
+            {"한국밸런스 혼합펀드",         "한국투자신탁운용", 2, "펀드",           false, "6.80", "6.80", "0.4500", null,         false}, // 8
+            // ── DOM_EQ (ac[3]) ───────────────────────────────────────────────────────
+            {"KODEX 200",                   "삼성자산운용",     3, "ETF",            false, "8.20", "8.20", "0.1500", "대표지수",   true},  // 9
+            {"TIGER 코스피",                "미래에셋자산운용", 3, "ETF",            false, "7.90", "7.90", "0.1500", null,         false}, // 10
+            {"KODEX 코스닥150",             "삼성자산운용",     3, "ETF",            false, "11.40","11.40","0.2500", "수익률 1위", false}, // 11
+            {"ACE 배당성장",                "한국투자신탁운용", 3, "ETF",            false, "9.10", "9.10", "0.1500", "배당",       false}, // 12
+            // ── OVS_EQ (ac[4]) ──────────────────────────────────────────────────────
+            {"TIGER 미국나스닥100",         "미래에셋자산운용", 4, "ETF",            false, "21.50","21.50","0.0700", "수익률 1위", true},  // 13
+            {"KODEX 미국S&P500TR",          "삼성자산운용",     4, "ETF",            false, "17.20","17.20","0.0099", "보수 최저",  true},  // 14
+            {"SOL 미국배당다우존스",        "신한자산운용",     4, "ETF",            false, "11.90","11.90","0.0900", "월배당",     false}, // 15
+            {"ACE 미국테크TOP10",           "한국투자신탁운용", 4, "ETF",            false, "24.10","24.10","0.1000", "고변동",     false}, // 16
+            {"TIGER 차이나전기차",          "미래에셋자산운용", 4, "ETF",            false, "6.20", "6.20", "0.4900", null,         false}, // 17
         };
         List<InvestmentProductMaster> result = new ArrayList<>();
         for (Object[] row : data) {
             result.add(investmentProductMasterRepository.save(InvestmentProductMaster.builder()
-                    .productProvider((String) row[0])
-                    .productCategory((String) row[1])
-                    .isPrincipalGuaranteed((Boolean) row[2])
-                    .annualReturnRate(new BigDecimal((String) row[3]))
+                    .productName((String)   row[0])
+                    .productProvider((String) row[1])
+                    .assetClass(ac.get((int) row[2]))
+                    .productCategory((String) row[3])
+                    .isPrincipalGuaranteed((Boolean) row[4])
+                    .annualReturnRate(new BigDecimal((String) row[5]))
+                    .returnRate3y(new BigDecimal((String) row[6]))
+                    .feeRate(new BigDecimal((String) row[7]))
+                    .productTag((String) row[8])
+                    .isDefault((Boolean) row[9])
                     .build()));
         }
         return result;
