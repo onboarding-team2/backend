@@ -74,6 +74,7 @@ public class DbScheduleService {
                 .description(request.getDescription())
                 .status("ACTIVE")
                 .createdDate(LocalDate.now())
+                .required(false)
                 .targetEmployees(targetEmployees)
                 .company(company)
                 .build();
@@ -86,6 +87,9 @@ public class DbScheduleService {
     public void deleteSchedule(Long scheduleId, Long companyId) {
         DbSchedule schedule = dbScheduleRepository.findByIdAndCompany_Id(scheduleId, companyId)
                 .orElseThrow(() -> new EntityNotFoundException("일정을 찾을 수 없습니다. id=" + scheduleId));
+        if (schedule.isRequired()) {
+            throw new IllegalStateException("필수 일정이므로 삭제 불가능합니다.");
+        }
         dbScheduleRepository.delete(schedule);
     }
 

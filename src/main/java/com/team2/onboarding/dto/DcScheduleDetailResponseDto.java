@@ -40,6 +40,8 @@ public class DcScheduleDetailResponseDto {
     @JsonProperty("target_employees")
     private List<TargetEmployeeDto> targetEmployees;
 
+    private boolean required;
+
     @Getter
     @Builder
     public static class TargetEmployeeDto {
@@ -88,6 +90,7 @@ public class DcScheduleDetailResponseDto {
                 .planType(schedule.getCompany() != null && schedule.getCompany().getPlanType() != null
                         ? schedule.getCompany().getPlanType().name() : null)
                 .targetEmployees(employeeDtos)
+                .required(schedule.isRequired())
                 .build();
     }
 }
