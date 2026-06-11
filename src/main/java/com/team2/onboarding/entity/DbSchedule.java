@@ -39,6 +39,12 @@ public class DbSchedule {
     @Column(name = "created_date", nullable = false)
     private LocalDate createdDate;
 
+    @Column(nullable = false)
+    private boolean required;
+
+    @Column(nullable = false)
+    private boolean done = false;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "db_schedule_employees",
@@ -59,6 +65,7 @@ public class DbSchedule {
             String description,
             String status,
             LocalDate createdDate,
+            boolean required,
             List<Employee> targetEmployees,
             Company company
     ) {
@@ -67,11 +74,13 @@ public class DbSchedule {
         this.description = description;
         this.status = status;
         this.createdDate = createdDate != null ? createdDate : LocalDate.now();
+        this.required = required;
         this.targetEmployees = targetEmployees != null ? targetEmployees : new ArrayList<>();
         this.company = company;
     }
 
     public void complete() {
         this.status = "DONE";
+        this.done = true;
     }
 }

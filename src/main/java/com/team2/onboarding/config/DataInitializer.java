@@ -658,6 +658,7 @@ public class DataInitializer {
                     .dueDate(feeDue)
                     .description("연간 " + feeType + " 수수료 납입 기한 (계약응당일 기준)")
                     .status(feeStatus)
+                    .required(true)
                     .company(company)
                     .build());
         }
@@ -668,6 +669,7 @@ public class DataInitializer {
                 .dueDate(LocalDate.of(year, 12, 15))
                 .description("당해 연도 확정급여 적립금 납입 기한 (매년 12월 15일)")
                 .status("ACTIVE")
+                .required(true)
                 .company(company)
                 .build());
 
@@ -686,6 +688,7 @@ public class DataInitializer {
                             .dueDate(p.getMaturityDate())
                             .description(productName + " 만기 도래 — 재투자 또는 상품 전환 검토 필요")
                             .status(matStatus)
+                            .required(true)
                             .company(company)
                             .build());
                 });
@@ -711,6 +714,7 @@ public class DataInitializer {
                     .dueDate(feeDue)
                     .description("연간 " + feeType + " 수수료 납입 기한 (계약응당일 기준)")
                     .status(feeStatus)
+                    .required(true)
                     .company(company)
                     .build());
         }
@@ -727,6 +731,7 @@ public class DataInitializer {
                             .dueDate(due)
                             .description(year + "년 " + m + "월분 DC 부담금 납입 (월납)")
                             .status(s)
+                            .required(true)
                             .company(company)
                             .build());
                 }
@@ -743,6 +748,7 @@ public class DataInitializer {
                             .dueDate(due)
                             .description(year + "년 " + qLabels[q] + " DC 부담금 납입 (분기납)")
                             .status(s)
+                            .required(true)
                             .company(company)
                             .build());
                 }
@@ -754,6 +760,7 @@ public class DataInitializer {
                         .dueDate(LocalDate.of(year - 1, 12, 31))
                         .description((year - 1) + "년 연간 DC 부담금 미납 — 즉시 납입 필요")
                         .status("OVERDUE")
+                        .required(true)
                         .company(company)
                         .build());
                 dcScheduleRepository.save(DcSchedule.builder()
@@ -761,6 +768,7 @@ public class DataInitializer {
                         .dueDate(LocalDate.of(year, 12, 31))
                         .description(year + "년 연간 DC 부담금 납입 예정 (연납)")
                         .status("ACTIVE")
+                        .required(true)
                         .company(company)
                         .build());
             }
@@ -772,6 +780,7 @@ public class DataInitializer {
                 .dueDate(LocalDate.of(year, 12, 15))
                 .description("당해 연도 연간임금총액 확정 및 퇴직연금 기여율 재산정")
                 .status("ACTIVE")
+                .required(true)
                 .company(company)
                 .build());
     }
