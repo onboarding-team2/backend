@@ -1,11 +1,8 @@
 package com.team2.onboarding.controller;
 
-import com.team2.onboarding.dto.DBDashboardResponseDto;
-import com.team2.onboarding.dto.DbMemberItemDto;
-import com.team2.onboarding.dto.EmployeeDetailResponseDto;
-import com.team2.onboarding.dto.PageResponse;
-import com.team2.onboarding.dto.PortfolioResponseDto;
+import com.team2.onboarding.dto.*;
 import com.team2.onboarding.security.JwtTokenProvider;
+import com.team2.onboarding.service.AssetsService;
 import com.team2.onboarding.service.DBService;
 import com.team2.onboarding.service.EmployeeService;
 import com.team2.onboarding.service.InvestmentProductDbService;
@@ -24,6 +21,7 @@ public class DBController {
     private final EmployeeService employeeService;
     private final JwtTokenProvider jwtTokenProvider;
     private final InvestmentProductDbService investmentProductDbService;
+    private final AssetsService assetsService;
 
     @GetMapping("/dashboard")
     public ResponseEntity<?> getDashboard(@RequestHeader("Authorization") String authHeader) {
@@ -79,6 +77,53 @@ public class DBController {
     public ResponseEntity<Object> getDocuments(@RequestHeader("Authorization") String authHeader) {
         String companyId = extractCompanyId(authHeader);
         return ResponseEntity.ok(dbService.getDocuments(companyId));
+    }
+
+    // ── 자산 운용 ────────────────────────────────────────────────────────────
+
+    @GetMapping("/assets/current")
+    public ResponseEntity<AssetsCurrentResponseDto> getAssetsCurrent(
+            @RequestHeader("Authorization") String authHeader) {
+        String companyId = extractCompanyId(authHeader);
+        return ResponseEntity.ok(assetsService.getCurrent(companyId));
+    }
+
+    @PatchMapping("/assets/target-rate")
+    public ResponseEntity<Double> updateTargetRate(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestBody UpdateTargetRateRequestDto req) {
+        String companyId = extractCompanyId(authHeader);
+        double newRate = assetsService.updateTargetReturnRate(companyId, req.getTargetReturnRate());
+        return ResponseEntity.ok(newRate);
+    }
+
+    @GetMapping("/assets/simulation-options")
+    public ResponseEntity<SimulationOptionsDto> getSimulationOptions() {
+        return ResponseEntity.ok(assetsService.getSimulationOptions());
+    }
+
+    @PostMapping("/assets/simulation")
+    public ResponseEntity<SimulationResponseDto> saveSimulation(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestBody SimulationSaveRequestDto req) {
+        String companyId = extractCompanyId(authHeader);
+        return ResponseEntity.ok(assetsService.saveSimulation(companyId, req));
+    }
+
+    @GetMapping("/assets/simulation")
+    public ResponseEntity<List<SimulationResponseDto>> listSimulations(
+            @RequestHeader("Authorization") String authHeader) {
+        String companyId = extractCompanyId(authHeader);
+        return ResponseEntity.ok(assetsService.listSimulations(companyId));
+    }
+
+    @DeleteMapping("/assets/simulation/{id}")
+    public ResponseEntity<Void> deleteSimulation(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable Long id) {
+        String companyId = extractCompanyId(authHeader);
+        assetsService.deleteSimulation(companyId, id);
+        return ResponseEntity.noContent().build();
     }
 
     private String extractCompanyId(String authHeader) {
