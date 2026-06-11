@@ -57,6 +57,11 @@ public class InvestmentProductDb {
     private InvestmentProductDb(Long principal, BigDecimal annualReturnRate, LocalDate purchaseDate,
             LocalDate maturityDate, Long confirmedAmount, String status,
             InvestmentProductMaster productMaster, CompanyRetirementDb companyRetirementDb) {
+        if (productMaster != null && Boolean.TRUE.equals(productMaster.getIsPrincipalGuaranteed())
+                && maturityDate == null) {
+            throw new IllegalArgumentException(
+                    "원리금보장형 상품(" + productMaster.getProductName() + ")은 만기일(maturity_date)이 필수입니다.");
+        }
         this.principal = principal;
         this.annualReturnRate = annualReturnRate;
         this.purchaseDate = purchaseDate != null ? purchaseDate : LocalDate.now();

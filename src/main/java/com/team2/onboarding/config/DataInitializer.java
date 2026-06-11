@@ -35,6 +35,10 @@ public class DataInitializer {
     private final EmployeeRetirementDcRepository employeeRetirementDcRepository;
     private final ContributionRepository contributionRepository;
 
+    // ── 일정 리포지토리 ───────────────────────────────────────────
+    private final DbScheduleRepository dbScheduleRepository;
+    private final DcScheduleRepository dcScheduleRepository;
+
     // ── DB 리포지토리 ─────────────────────────────────────────────
     private final CompanyRetirementDbRepository companyRetirementDbRepository;
     private final EmployeeRetirementDbRepository employeeRetirementDbRepository;
@@ -203,7 +207,7 @@ public class DataInitializer {
                     : 250_000L + (long) ci * 30_000L;
             for (int y = year - 2; y <= year; y++) {
                 boolean paid = y < year;
-                LocalDate feeDue = contractDate.withYear(y);
+                LocalDate feeDue = contractDate.withYear(y).plusMonths(1);
                 feePaymentRepository.save(FeePayment.builder()
                         .paymentYear(y)
                         .dueDate(feeDue)
@@ -255,6 +259,7 @@ public class DataInitializer {
 
         // 연간 총 contribution 기준으로 납입 스케줄 생성
         insertContributions(year, cycle, totalContribution, crd);
+        insertDcSchedules(company, crd, year);
     }
 
     // ═════════════════════════════════════════════════════════════
@@ -282,7 +287,7 @@ public class DataInitializer {
                     : (long) Math.round(feeBaseMan * 10_000L * 0.6);
             for (int y = year - 2; y <= year; y++) {
                 boolean paid = y < year;
-                LocalDate feeDue = contractDate.withYear(y);
+                LocalDate feeDue = contractDate.withYear(y).plusMonths(1);
                 feePaymentDbRepository.save(FeePaymentDb.builder()
                         .paymentYear(y)
                         .dueDate(feeDue)
@@ -367,9 +372,10 @@ public class DataInitializer {
         }
 
         long fundedAmount = insertInvestmentProducts(
-                portfolioType, crdb, productMasters, totalBenefitObligation, targetFundingRatio);
+                portfolioType, crdb, productMasters, totalBenefitObligation, targetFundingRatio, year);
         insertReserve(crdb, baseDate, totalBenefitObligation, fundedAmount);
         insertReturnHistory(crdb, fundedAmount, year);
+        insertDbSchedules(company, crdb, year);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -379,39 +385,40 @@ public class DataInitializer {
     //            9=KODEX200, 10=TIGER코스피, 11=KODEX코스닥150, 12=ACE배당성장,
     //           13=TIGER나스닥100, 14=KODEX S&P500, 15=SOL배당다우존스,
     //           16=ACE미국테크TOP10, 17=TIGER차이나전기차
-    // maturityMonthsOffset: null = ETF(만기 없음), 양수 = 운용중, 음수 = 만기완료
+    // yearOffset: null=ETF(만기없음), 0=당해연도, 1=익년, -1=전년(만기완료)
     // ─────────────────────────────────────────────────────────────
     private long insertInvestmentProducts(int portfolioType, CompanyRetirementDb crdb,
                                           List<InvestmentProductMaster> masters,
                                           long totalBenefitObligation,
-                                          double targetFundingRatio) {
-        // {masterIdx, 비율(%), maturityMonthsOffset(null=ETF), status}
+                                          double targetFundingRatio,
+                                          int year) {
+        // {masterIdx, 비율(%), yearOffset(null=ETF무만기/0=올해/1=내년/-1=작년), month, day, status}
         Object[][] portfolio = switch (portfolioType) {
             case 0 -> new Object[][]{ // 보수형 — 원리금보장형만
-                    {0, 50.0,  6, "운용중"},  // IBK 정기예금 1년
-                    {1, 30.0, 12, "운용중"},  // IBK GIC 2년
-                    {2, 20.0,  8, "운용중"},  // ELB 지수연계형
+                    {0, 50.0,  0, 12, 31, "운용중"},   // IBK 정기예금 1년 — 올해 12월 만기
+                    {1, 30.0,  1,  6, 30, "운용중"},   // IBK GIC 2년 — 내년 6월 만기
+                    {2, 20.0, -1,  3, 31, "만기완료"}, // ELB 지수연계형 — 작년 3월 만기완료
             };
             case 1 -> new Object[][]{ // 균형형 — 원리금보장형 + 채권 + 혼합
-                    {0, 25.0,  4, "운용중"},  // IBK 정기예금 1년
-                    {1, 15.0, 10, "운용중"},  // IBK GIC 2년
-                    {3, 25.0, null, "운용중"}, // KODEX 회사채 ETF
-                    {6, 20.0, null, "운용중"}, // TIGER TDF2040
-                    {7, 15.0, null, "운용중"}, // KODEX TRF3070
+                    {0, 25.0,  0, 11, 30, "운용중"},        // IBK 정기예금 1년 — 올해 11월 만기
+                    {1, 15.0,  1,  5, 31, "운용중"},        // IBK GIC 2년 — 내년 5월 만기
+                    {3, 25.0, null, null, null, "운용중"},   // KODEX 회사채 ETF
+                    {6, 20.0, null, null, null, "운용중"},   // TIGER TDF2040
+                    {7, 15.0, null, null, null, "운용중"},   // KODEX TRF3070
             };
             case 2 -> new Object[][]{ // 성장형 — 원리금보장형 + 채권 + 국내외주식
-                    {0,  15.0,  3, "운용중"},  // IBK 정기예금 1년
-                    {3,  20.0, null, "운용중"}, // KODEX 회사채 ETF
-                    {9,  30.0, null, "운용중"}, // KODEX 200
-                    {13, 20.0, null, "운용중"}, // TIGER 미국나스닥100
-                    {14, 15.0, null, "운용중"}, // KODEX 미국S&P500TR
+                    {0,  15.0,  0,  9, 30, "운용중"},       // IBK 정기예금 1년 — 올해 9월 만기
+                    {3,  20.0, null, null, null, "운용중"},  // KODEX 회사채 ETF
+                    {9,  30.0, null, null, null, "운용중"},  // KODEX 200
+                    {13, 20.0, null, null, null, "운용중"},  // TIGER 미국나스닥100
+                    {14, 15.0, null, null, null, "운용중"},  // KODEX 미국S&P500TR
             };
             default -> new Object[][]{ // 혼합형 — 만기완료 포함
-                    {0,  20.0,  1, "운용중"},   // IBK 정기예금 (만기임박)
-                    {4,  17.5, null, "운용중"},  // ACE 국고채10년
-                    {7,  22.5, null, "운용중"},  // KODEX TRF3070
-                    {9,  25.0, null, "운용중"},  // KODEX 200
-                    {2,  15.0, -12, "만기완료"}, // ELB (작년 만기완료)
+                    {0,  20.0,  0,  8, 31, "운용중"},       // IBK 정기예금 — 올해 8월 만기
+                    {4,  17.5, null, null, null, "운용중"},  // ACE 국고채10년
+                    {7,  22.5, null, null, null, "운용중"},  // KODEX TRF3070
+                    {9,  25.0, null, null, null, "운용중"},  // KODEX 200
+                    {2,  15.0, -1,  6, 30, "만기완료"},     // ELB 지수연계형 — 작년 6월 만기완료
             };
         };
 
@@ -426,18 +433,23 @@ public class DataInitializer {
 
         long totalFunded = 0L;
         for (Object[] item : portfolio) {
-            int masterIdx        = (int)    item[0];
-            double ratio         = (double) item[1];
-            Object monthsOffsetObj = item[2];
-            String status        = (String) item[3];
+            int masterIdx      = (int)    item[0];
+            double ratio       = (double) item[1];
+            Integer yearOffset = (Integer) item[2];
+            String status      = (String) item[5];
 
             long principal = Math.round(totalBenefitObligation * ratio / 100.0 * scalingFactor);
             InvestmentProductMaster master = masters.get(masterIdx);
             BigDecimal rate = master.getAnnualReturnRate();
 
-            LocalDate maturityDate = (monthsOffsetObj != null)
-                    ? LocalDate.now().plusMonths((int) monthsOffsetObj)
-                    : null;
+            LocalDate maturityDate;
+            if (yearOffset == null) {
+                maturityDate = null;
+            } else {
+                int matMonth = (Integer) item[3];
+                int matDay   = (Integer) item[4];
+                maturityDate = LocalDate.of(year + yearOffset, matMonth, matDay);
+            }
 
             long evaluatedAmount = Math.round(principal * (1 + rate.doubleValue() / 100.0));
             Long confirmedAmount = "만기완료".equals(status) ? evaluatedAmount : null;
@@ -625,6 +637,143 @@ public class DataInitializer {
         return empType == EmployeeType.EXECUTIVE
                 ? 100_000_000L + (long) (ei % 2) * 20_000_000L
                 : 40_000_000L + (long) (ei - 2) * 5_000_000L;
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // DB 일정 생성
+    //  ① 수수료 납입 (운용관리·자산관리) — 계약응당일 기준 매년
+    //  ② 적립금 납입 — 매년 12/15
+    //  ③ 보유상품 만기 도래 — 당해 연도 만기인 운용중 상품 전체
+    // ─────────────────────────────────────────────────────────────
+    private void insertDbSchedules(Company company, CompanyRetirementDb crdb, int year) {
+        LocalDate today = LocalDate.now();
+        LocalDate contractDate = crdb.getContractDate();
+
+        // ① 수수료 납입 (운용관리 / 자산관리) — 계약응당일 기준 매년 갱신
+        for (String feeType : new String[]{"운용관리", "자산관리"}) {
+            LocalDate feeDue = contractDate.withYear(year).plusMonths(1);
+            String feeStatus = feeDue.isBefore(today) ? "OVERDUE" : "ACTIVE";
+            dbScheduleRepository.save(DbSchedule.builder()
+                    .title(feeType + " 수수료 납입")
+                    .dueDate(feeDue)
+                    .description("연간 " + feeType + " 수수료 납입 기한 (계약응당일 기준)")
+                    .status(feeStatus)
+                    .company(company)
+                    .build());
+        }
+
+        // ② 적립금 납입 — 매년 12/15
+        dbScheduleRepository.save(DbSchedule.builder()
+                .title("적립금 납입")
+                .dueDate(LocalDate.of(year, 12, 15))
+                .description("당해 연도 확정급여 적립금 납입 기한 (매년 12월 15일)")
+                .status("ACTIVE")
+                .company(company)
+                .build());
+
+        // ③ 보유상품 만기 도래 — investment_products_db 중 올해 만기인 상품 (만기 임박 순)
+        investmentProductDbRepository.findWithProductMasterByCompanyRetirementDb_Id(crdb.getId()).stream()
+                .filter(p -> "운용중".equals(p.getStatus())
+                        && p.getMaturityDate() != null
+                        && p.getMaturityDate().getYear() == year)
+                .sorted(java.util.Comparator.comparing(InvestmentProductDb::getMaturityDate))
+                .forEach(p -> {
+                    String matStatus = p.getMaturityDate().isBefore(today) ? "OVERDUE" : "ACTIVE";
+                    String productName = p.getProductMaster().getProductProvider()
+                            + " " + p.getProductMaster().getProductName();
+                    dbScheduleRepository.save(DbSchedule.builder()
+                            .title(productName + " 만기 도래")
+                            .dueDate(p.getMaturityDate())
+                            .description(productName + " 만기 도래 — 재투자 또는 상품 전환 검토 필요")
+                            .status(matStatus)
+                            .company(company)
+                            .build());
+                });
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // DC 일정 생성
+    //  ① 수수료 납입 (운용관리·자산관리) — fee_payments_dc.due_date 기준 (계약응당일)
+    //  ② 부담금 납입 — contributions_dc.due_date 기준 (납입주기별 미납/예정 항목)
+    //  ③ 연간임금총액 갱신 — 매년 12/15
+    // ─────────────────────────────────────────────────────────────
+    private void insertDcSchedules(Company company, CompanyRetirementDc crd, int year) {
+        LocalDate today = LocalDate.now();
+        LocalDate contractDate = crd.getContractDate();
+        PaymentCycle cycle = crd.getPaymentCycle();
+
+        // ① 수수료 납입 (운용관리 / 자산관리)
+        for (String feeType : new String[]{"운용관리", "자산관리"}) {
+            LocalDate feeDue = contractDate.withYear(year).plusMonths(1);
+            String feeStatus = feeDue.isBefore(today) ? "OVERDUE" : "ACTIVE";
+            dcScheduleRepository.save(DcSchedule.builder()
+                    .title(feeType + " 수수료 납입")
+                    .dueDate(feeDue)
+                    .description("연간 " + feeType + " 수수료 납입 기한 (계약응당일 기준)")
+                    .status(feeStatus)
+                    .company(company)
+                    .build());
+        }
+
+        // ② 적립금 납입 — 납입 주기별 미납/예정 항목
+        switch (cycle) {
+            case MONTHLY -> {
+                // 6월(미납)·7월(예정) 두 건 — 현재 기준 가장 임박한 2개월
+                for (int m = 6; m <= 7; m++) {
+                    LocalDate due = LocalDate.of(year, m, 25);
+                    String s = due.isBefore(today) ? "OVERDUE" : "ACTIVE";
+                    dcScheduleRepository.save(DcSchedule.builder()
+                            .title("부담금 납입 - " + m + "월")
+                            .dueDate(due)
+                            .description(year + "년 " + m + "월분 DC 부담금 납입 (월납)")
+                            .status(s)
+                            .company(company)
+                            .build());
+                }
+            }
+            case QUARTERLY -> {
+                // Q2(6/30 미납) · Q3(9/30 예정)
+                int[][] quarters = {{6, 30}, {9, 30}};
+                String[] qLabels = {"2분기", "3분기"};
+                for (int q = 0; q < 2; q++) {
+                    LocalDate due = LocalDate.of(year, quarters[q][0], quarters[q][1]);
+                    String s = due.isBefore(today) ? "OVERDUE" : "ACTIVE";
+                    dcScheduleRepository.save(DcSchedule.builder()
+                            .title("부담금 납입 - " + qLabels[q])
+                            .dueDate(due)
+                            .description(year + "년 " + qLabels[q] + " DC 부담금 납입 (분기납)")
+                            .status(s)
+                            .company(company)
+                            .build());
+                }
+            }
+            case YEARLY -> {
+                // 전년도 미납(OVERDUE) + 당해 연도 예정(ACTIVE)
+                dcScheduleRepository.save(DcSchedule.builder()
+                        .title("연간 적립금 납입 - " + (year - 1) + "년")
+                        .dueDate(LocalDate.of(year - 1, 12, 31))
+                        .description((year - 1) + "년 연간 DC 부담금 미납 — 즉시 납입 필요")
+                        .status("OVERDUE")
+                        .company(company)
+                        .build());
+                dcScheduleRepository.save(DcSchedule.builder()
+                        .title("연간 적립금 납입 - " + year + "년")
+                        .dueDate(LocalDate.of(year, 12, 31))
+                        .description(year + "년 연간 DC 부담금 납입 예정 (연납)")
+                        .status("ACTIVE")
+                        .company(company)
+                        .build());
+            }
+        }
+
+        // ③ 연간임금총액 갱신 — 매년 12/15
+        dcScheduleRepository.save(DcSchedule.builder()
+                .title("연간임금총액 갱신")
+                .dueDate(LocalDate.of(year, 12, 15))
+                .description("당해 연도 연간임금총액 확정 및 퇴직연금 기여율 재산정")
+                .status("ACTIVE")
+                .company(company)
+                .build());
     }
 
     // ─────────────────────────────────────────────────────────────
