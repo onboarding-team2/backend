@@ -79,8 +79,7 @@ public class DbScheduleResponseDto {
                 .count();
 
         long overdueCount = scheduleList.stream()
-                .filter(s -> !"DONE".equals(s.getStatus()))
-                .filter(s -> s.getDueDate().isBefore(today))
+                .filter(s -> !"DONE".equals(s.getStatus()) && s.getDueDate().isBefore(today))
                 .count();
 
         return DbScheduleResponseDto.builder()
