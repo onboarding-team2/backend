@@ -34,6 +34,9 @@ public class DbScheduleService {
             endDate = period == 1
                     ? startDate.plusMonths(1).minusDays(1)
                     : startDate.plusMonths(2).minusDays(1);
+        } else {
+            startDate = LocalDate.now().withDayOfMonth(1);
+            endDate = LocalDate.of(startDate.getYear(), 12, 31);
         }
 
         List<DbSchedule> schedules =
@@ -73,6 +76,7 @@ public class DbScheduleService {
                 .dueDate(request.getDueDate())
                 .description(request.getDescription())
                 .status("ACTIVE")
+                .isMandatory(Boolean.FALSE)
                 .createdDate(LocalDate.now())
                 .targetEmployees(targetEmployees)
                 .company(company)
@@ -86,6 +90,11 @@ public class DbScheduleService {
     public void deleteSchedule(Long scheduleId, Long companyId) {
         DbSchedule schedule = dbScheduleRepository.findByIdAndCompany_Id(scheduleId, companyId)
                 .orElseThrow(() -> new EntityNotFoundException("일정을 찾을 수 없습니다. id=" + scheduleId));
+
+        if (Boolean.TRUE.equals(schedule.getIsMandatory())) {
+            throw new IllegalStateException("삭제할 수 없는 일정입니다. id=" + scheduleId);
+        }
+
         dbScheduleRepository.delete(schedule);
     }
 
