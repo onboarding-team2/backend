@@ -80,6 +80,7 @@ public class DcScheduleService {
                 .status("ACTIVE")
                 .isMandatory(false)
                 .createdDate(LocalDate.now())
+                .required(false)
                 .targetEmployees(targetEmployees)
                 .company(company)
                 .build();
@@ -93,8 +94,8 @@ public class DcScheduleService {
         DcSchedule schedule = dcScheduleRepository.findByIdAndCompany_Id(scheduleId, companyId)
                 .orElseThrow(() -> new EntityNotFoundException("일정을 찾을 수 없습니다. id=" + scheduleId));
 
-        if (Boolean.TRUE.equals(schedule.getIsMandatory())) {
-            throw new IllegalStateException("삭제할 수 없는 일정입니다. id=" + scheduleId);
+        if (schedule.getIsMandatory()) {
+            throw new IllegalStateException("삭제할 수 없는 의무이행 일정입니다. id=" + scheduleId);
         }
 
         dcScheduleRepository.delete(schedule);

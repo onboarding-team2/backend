@@ -40,6 +40,10 @@ public class CompanyRetirementDb {
     @JoinColumn(name = "company_id")
     private Company company;
 
+    public void updateTargetReturnRate(BigDecimal newRate) {
+        this.targetReturnRate = newRate;
+    }
+
     @Builder
     private CompanyRetirementDb(String companyAccount, PlanType planType, LocalDate contractDate,
             Integer fiscalMonth, BigDecimal targetReturnRate, Company company) {

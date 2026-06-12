@@ -44,6 +44,8 @@ public class DbScheduleDetailResponseDto {
     @JsonProperty("target_employees")
     private List<TargetEmployeeDto> targetEmployees;
 
+    private boolean required;
+
     @Getter
     @Builder
     public static class TargetEmployeeDto {
@@ -97,6 +99,7 @@ public class DbScheduleDetailResponseDto {
                 .brn(brn)
                 .planType(planType)
                 .targetEmployees(employeeDtos)
+                .required(schedule.isRequired())
                 .build();
     }
 }
