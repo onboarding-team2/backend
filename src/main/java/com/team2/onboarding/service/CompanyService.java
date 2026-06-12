@@ -1,5 +1,6 @@
 package com.team2.onboarding.service;
 
+import com.team2.onboarding.dto.CompanyDetailDto;
 import com.team2.onboarding.dto.CompanyInfoDto;
 import com.team2.onboarding.dto.ContributionChartItemDto;
 import com.team2.onboarding.dto.DcContributionStatusResponseDto;
@@ -22,6 +23,8 @@ public class CompanyService {
 
     private final EmployeeRepository employeeRepository;
     private final CompanyRetirementDcRepository companyRetirementDcRepository;
+    private final CompanyRetirementDbRepository companyRetirementDbRepository;
+    private final ReserveDbRepository reserveDbRepository;
     private final ContributionRepository contributionRepository;
     private final EmployeeRetirementDcRepository employeeRetirementDcRepository;
     private final CompanyRepository companyRepository;
@@ -38,6 +41,45 @@ public class CompanyService {
                 .businessNumber(formatBrn(company.getBrn()))
                 .planType(planType)
                 .build();
+    }
+
+    public CompanyDetailDto getCompanyDetail(Long companyId) {
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new RuntimeException("해당 기업 정보가 존재하지 않습니다."));
+
+        CompanyDetailDto.CompanyDetailDtoBuilder builder = CompanyDetailDto.builder()
+                .companyName(company.getCompanyName())
+                .businessNumber(formatBrn(company.getBrn()))
+                .representativeName(company.getRepresentativeName())
+                .planType(company.getPlanType())
+                .employeeCount(employeeRepository.countByCompany_Id(companyId));
+
+        if (company.getPlanType() == PlanType.DC) {
+            companyRetirementDcRepository.findByCompanyId(companyId).ifPresent(dc -> {
+                long totalReserve = contributionRepository.findByCompanyRetirementDc(dc).stream()
+                        .filter(c -> c.getPaidDate() != null)
+                        .mapToLong(Contribution::getContributionAmount)
+                        .sum();
+                builder.companyAccount(dc.getCompanyAccount())
+                        .contractDate(dc.getContractDate())
+                        .paymentCycle(dc.getPaymentCycle() != null ? dc.getPaymentCycle().getDescription() : null)
+                        .totalReserve(totalReserve);
+            });
+        } else if (company.getPlanType() == PlanType.DB) {
+            companyRetirementDbRepository.findByCompany_Id(companyId).ifPresent(db -> {
+                long totalReserve = reserveDbRepository
+                        .findTopByCompanyRetirementDb_IdOrderByBaseDateDesc(db.getId())
+                        .map(r -> r.getFundedAmount() != null ? r.getFundedAmount() : 0L)
+                        .orElse(0L);
+                builder.companyAccount(db.getCompanyAccount())
+                        .contractDate(db.getContractDate())
+                        .fiscalMonth(db.getFiscalMonth())
+                        .targetReturnRate(db.getTargetReturnRate())
+                        .totalReserve(totalReserve);
+            });
+        }
+
+        return builder.build();
     }
 
     private String formatBrn(String brn) {
