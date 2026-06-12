@@ -1,5 +1,6 @@
 package com.team2.onboarding.controller;
 
+import com.team2.onboarding.dto.CompanyDetailDto;
 import com.team2.onboarding.dto.CompanyInfoDto;
 import com.team2.onboarding.dto.DcContributionStatusResponseDto;
 import com.team2.onboarding.dto.ExpectedRetireeDto;
@@ -26,6 +27,13 @@ public class CompanyController {
             @RequestHeader("Authorization") String authHeader) {
         String companyId = extractCompanyId(authHeader);
         return ResponseEntity.ok(companyService.getCompanyInfo(Long.parseLong(companyId)));
+    }
+
+    @GetMapping("/detail")
+    public ResponseEntity<CompanyDetailDto> getCompanyDetail(
+            @RequestHeader("Authorization") String authHeader) {
+        String companyId = extractCompanyId(authHeader);
+        return ResponseEntity.ok(companyService.getCompanyDetail(Long.parseLong(companyId)));
     }
 
     @GetMapping("/retirement-plan")
