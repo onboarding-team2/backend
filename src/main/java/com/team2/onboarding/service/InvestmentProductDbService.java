@@ -24,6 +24,16 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class InvestmentProductDbService {
 
+    private static final List<String> CLASS_ORDER = List.of("DEPOSIT", "BOND", "MIXED", "DOM_EQ", "OVS_EQ");
+
+    private static final Map<String, String> CLASS_DISPLAY_NAMES = Map.of(
+            "DEPOSIT", "원리금보장형",
+            "BOND",    "채권형",
+            "MIXED",   "혼합형·TDF",
+            "DOM_EQ",  "국내주식ETF",
+            "OVS_EQ",  "해외주식ETF"
+    );
+
     private final InvestmentProductDbRepository investmentProductDbRepository;
     private final CompanyRetirementDbRepository companyRetirementDbRepository;
 
@@ -45,10 +55,8 @@ public class InvestmentProductDbService {
                     .build();
         }
 
-        Map<String, Long> categoryAmounts = new LinkedHashMap<>();
-        categoryAmounts.put("정기예금", 0L);
-        categoryAmounts.put("이율보증형보험", 0L);
-        categoryAmounts.put("ELB 및 ELD", 0L);
+        Map<String, Long> codeAmounts = new LinkedHashMap<>();
+        for (String code : CLASS_ORDER) codeAmounts.put(code, 0L);
 
         long totalAmount = 0;
         long guaranteedAmount = 0;
@@ -56,8 +64,8 @@ public class InvestmentProductDbService {
 
         for (InvestmentProductDb p : products) {
             long amount = evaluateAmount(p);
-            String category = p.getProductMaster().getProductCategory();
-            categoryAmounts.merge(category, amount, Long::sum);
+            String code = p.getProductMaster().getAssetClass().getClassCode();
+            codeAmounts.merge(code, amount, (a, b) -> a + b);
             totalAmount += amount;
             weightedRateSum += p.getAnnualReturnRate().doubleValue() * amount;
             if (Boolean.TRUE.equals(p.getProductMaster().getIsPrincipalGuaranteed())) {
@@ -67,10 +75,10 @@ public class InvestmentProductDbService {
 
         final long finalTotal = totalAmount;
 
-        List<PortfolioCategoryDto> portfolioItems = categoryAmounts.entrySet().stream()
+        List<PortfolioCategoryDto> portfolioItems = codeAmounts.entrySet().stream()
                 .filter(e -> e.getValue() > 0)
                 .map(e -> PortfolioCategoryDto.builder()
-                        .category(e.getKey())
+                        .category(CLASS_DISPLAY_NAMES.getOrDefault(e.getKey(), e.getKey()))
                         .amount(e.getValue())
                         .percent(finalTotal > 0 ? Math.round(e.getValue() * 100.0 / finalTotal) : 0)
                         .build())
@@ -81,7 +89,7 @@ public class InvestmentProductDbService {
                 .sorted(Comparator.comparing(InvestmentProductDb::getMaturityDate))
                 .limit(3)
                 .map(p -> MaturingProductDto.builder()
-                        .name(p.getProductMaster().getProductProvider() + " " + p.getProductMaster().getProductCategory())
+                        .name(p.getProductMaster().getProductName())
                         .maturityDate(p.getMaturityDate())
                         .principal(p.getPrincipal())
                         .evaluatedAmount(evaluateAmount(p))
