@@ -3,6 +3,7 @@ package com.team2.onboarding.controller;
 import com.team2.onboarding.dto.DbScheduleCreateRequestDto;
 import com.team2.onboarding.dto.DbScheduleDetailResponseDto;
 import com.team2.onboarding.dto.DbScheduleResponseDto;
+import com.team2.onboarding.dto.DbScheduleUpdateRequestDto;
 import com.team2.onboarding.service.DbScheduleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -48,6 +49,15 @@ public class DbScheduleController {
     ) {
         dbScheduleService.deleteSchedule(id, Long.parseLong(companyId));
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<DbScheduleDetailResponseDto> updateSchedule(
+            @AuthenticationPrincipal String companyId,
+            @PathVariable Long id,
+            @RequestBody DbScheduleUpdateRequestDto request
+    ) {
+        return ResponseEntity.ok(dbScheduleService.updateSchedule(id, Long.parseLong(companyId), request));
     }
 
     @PatchMapping("/{id}/complete")
