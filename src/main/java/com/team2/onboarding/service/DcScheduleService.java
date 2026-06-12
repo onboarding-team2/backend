@@ -3,6 +3,7 @@ package com.team2.onboarding.service;
 import com.team2.onboarding.dto.DcScheduleCreateRequestDto;
 import com.team2.onboarding.dto.DcScheduleDetailResponseDto;
 import com.team2.onboarding.dto.DcScheduleResponseDto;
+import com.team2.onboarding.dto.DcScheduleUpdateRequestDto;
 import com.team2.onboarding.entity.Company;
 import com.team2.onboarding.entity.Employee;
 import com.team2.onboarding.entity.DcSchedule;
@@ -31,9 +32,10 @@ public class DcScheduleService {
         LocalDate startDate = null;
         LocalDate endDate = null;
 
-        if (period == null) {  // 당해년도
-            startDate = LocalDate.now().withDayOfMonth(1);
-            endDate = LocalDate.of(startDate.getYear(), 12, 31);
+        if (period == null) {  // 당해년도 (1월 1일부터 연말까지 — OVERDUE 포함)
+            int currentYear = LocalDate.now().getYear();
+            startDate = LocalDate.of(currentYear, 1, 1);
+            endDate = LocalDate.of(currentYear, 12, 31);
         } else if (period != 0) {  // 1개월, 2개월 (0인 경우 전체기간)
             startDate = LocalDate.now().withDayOfMonth(1);
             endDate = period == 1
@@ -86,6 +88,24 @@ public class DcScheduleService {
 
         DcSchedule saved = dcScheduleRepository.save(schedule);
         return DcScheduleDetailResponseDto.from(saved);
+    }
+
+    @Transactional
+    public DcScheduleDetailResponseDto updateSchedule(Long scheduleId, Long companyId, DcScheduleUpdateRequestDto request) {
+        DcSchedule schedule = dcScheduleRepository.findByIdAndCompany_Id(scheduleId, companyId)
+                .orElseThrow(() -> new EntityNotFoundException("일정을 찾을 수 없습니다. id=" + scheduleId));
+
+        if (schedule.isMandatory()) {
+            throw new IllegalStateException("수정할 수 없는 의무이행 일정입니다. id=" + scheduleId);
+        }
+
+        List<Employee> targetEmployees = request.getEmployeeIds() != null && !request.getEmployeeIds().isEmpty()
+                ? employeeRepository.findByIdInAndCompany_Id(request.getEmployeeIds(), companyId)
+                : new ArrayList<>();
+
+        schedule.update(request.getTitle(), request.getDueDate(), request.getDescription(), targetEmployees);
+        dcScheduleRepository.save(schedule);
+        return DcScheduleDetailResponseDto.from(schedule);
     }
 
     @Transactional

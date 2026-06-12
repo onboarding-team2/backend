@@ -1,6 +1,9 @@
 package com.team2.onboarding.controller;
 
-import com.team2.onboarding.dto.*;
+import com.team2.onboarding.dto.DcScheduleCreateRequestDto;
+import com.team2.onboarding.dto.DcScheduleDetailResponseDto;
+import com.team2.onboarding.dto.DcScheduleResponseDto;
+import com.team2.onboarding.dto.DcScheduleUpdateRequestDto;
 import com.team2.onboarding.service.DcScheduleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -46,6 +49,15 @@ public class DcScheduleController {
     ) {
         dcScheduleService.deleteSchedule(id, Long.parseLong(companyId));
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<DcScheduleDetailResponseDto> updateSchedule(
+            @AuthenticationPrincipal String companyId,
+            @PathVariable Long id,
+            @RequestBody DcScheduleUpdateRequestDto request
+    ) {
+        return ResponseEntity.ok(dcScheduleService.updateSchedule(id, Long.parseLong(companyId), request));
     }
 
     @PatchMapping("/{id}/complete")

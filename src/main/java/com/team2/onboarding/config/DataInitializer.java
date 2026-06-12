@@ -649,19 +649,17 @@ public class DataInitializer {
         LocalDate today = LocalDate.now();
         LocalDate contractDate = crdb.getContractDate();
 
-        // ① 수수료 납입 (운용관리 / 자산관리) — 계약응당일 기준 매년 갱신
-        for (String feeType : new String[]{"운용관리", "자산관리"}) {
-            LocalDate feeDue = contractDate.withYear(year).plusMonths(1);
-            String feeStatus = feeDue.isBefore(today) ? "OVERDUE" : "ACTIVE";
-            dbScheduleRepository.save(DbSchedule.builder()
-                    .title(feeType + " 수수료 납입")
-                    .dueDate(feeDue)
-                    .description("연간 " + feeType + " 수수료 납입 기한 (계약응당일 기준)")
-                    .status(feeStatus)
-                    .isMandatory(true)
-                    .company(company)
-                    .build());
-        }
+        // ① 수수료 납입 (운용관리 및 자산관리) — 계약응당일 기준 매년 갱신
+        LocalDate dbFeeDue = contractDate.withYear(year).plusMonths(1);
+        String dbFeeStatus = dbFeeDue.isBefore(today) ? "OVERDUE" : "ACTIVE";
+        dbScheduleRepository.save(DbSchedule.builder()
+                .title("운용관리 및 자산관리 수수료 납입")
+                .dueDate(dbFeeDue)
+                .description("연간 운용관리 및 자산관리 수수료 납입 기한 (계약응당일 기준)")
+                .status(dbFeeStatus)
+                .isMandatory(true)
+                .company(company)
+                .build());
 
         // ② 적립금 납입 — 매년 12/15
         dbScheduleRepository.save(DbSchedule.builder()
@@ -705,19 +703,17 @@ public class DataInitializer {
         LocalDate contractDate = crd.getContractDate();
         PaymentCycle cycle = crd.getPaymentCycle();
 
-        // ① 수수료 납입 (운용관리 / 자산관리)
-        for (String feeType : new String[]{"운용관리", "자산관리"}) {
-            LocalDate feeDue = contractDate.withYear(year).plusMonths(1);
-            String feeStatus = feeDue.isBefore(today) ? "OVERDUE" : "ACTIVE";
-            dcScheduleRepository.save(DcSchedule.builder()
-                    .title(feeType + " 수수료 납입")
-                    .dueDate(feeDue)
-                    .description("연간 " + feeType + " 수수료 납입 기한 (계약응당일 기준)")
-                    .status(feeStatus)
-                    .isMandatory(true)
-                    .company(company)
-                    .build());
-        }
+        // ① 수수료 납입 (운용관리 및 자산관리)
+        LocalDate dcFeeDue = contractDate.withYear(year).plusMonths(1);
+        String dcFeeStatus = dcFeeDue.isBefore(today) ? "OVERDUE" : "ACTIVE";
+        dcScheduleRepository.save(DcSchedule.builder()
+                .title("운용관리 및 자산관리 수수료 납입")
+                .dueDate(dcFeeDue)
+                .description("연간 운용관리 및 자산관리 수수료 납입 기한 (계약응당일 기준)")
+                .status(dcFeeStatus)
+                .isMandatory(true)
+                .company(company)
+                .build());
 
         // ② 적립금 납입 — 납입 주기별 미납/예정 항목
         switch (cycle) {

@@ -77,4 +77,11 @@ public class DbSchedule {
     }
 
     public void complete() { this.status = "DONE"; }
+
+    public void update(String title, LocalDate dueDate, String description, List<Employee> targetEmployees) {
+        if (title != null) this.title = title;
+        if (dueDate != null) this.dueDate = dueDate;
+        if (description != null) this.description = description;
+        this.targetEmployees = targetEmployees != null ? targetEmployees : new ArrayList<>();
+    }
 }
