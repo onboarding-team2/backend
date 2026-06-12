@@ -1,4 +1,4 @@
-ackage com.team2.onboarding.config;
+package com.team2.onboarding.config;
 
 import com.team2.onboarding.entity.*;
 import com.team2.onboarding.enums.EmployeeType;
