@@ -78,7 +78,6 @@ public class DbScheduleService {
                 .status("ACTIVE")
                 .isMandatory(false)
                 .createdDate(LocalDate.now())
-                .required(false)
                 .targetEmployees(targetEmployees)
                 .company(company)
                 .build();
@@ -92,7 +91,7 @@ public class DbScheduleService {
         DbSchedule schedule = dbScheduleRepository.findByIdAndCompany_Id(scheduleId, companyId)
                 .orElseThrow(() -> new EntityNotFoundException("일정을 찾을 수 없습니다. id=" + scheduleId));
 
-        if (schedule.getIsMandatory()) {
+        if (schedule.isMandatory()) {
             throw new IllegalStateException("삭제할 수 없는 의무이행 일정입니다. id=" + scheduleId);
         }
       

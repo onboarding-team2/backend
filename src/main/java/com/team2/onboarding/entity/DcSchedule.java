@@ -37,16 +37,10 @@ public class DcSchedule {
     private String status;
 
     @Column(name = "is_mandatory", nullable = false)
-    private Boolean isMandatory;
+    private boolean isMandatory;
 
     @Column(name = "created_date", nullable = false)
     private LocalDate createdDate;
-
-    @Column(nullable = false)
-    private boolean required;
-
-    @Column(nullable = false)
-    private boolean done = false;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
@@ -67,9 +61,8 @@ public class DcSchedule {
             String title,
             String description,
             String status,
-            Boolean isMandatory,
+            boolean isMandatory,
             LocalDate createdDate,
-            boolean required,
             List<Employee> targetEmployees,
             Company company
     ) {
@@ -79,13 +72,9 @@ public class DcSchedule {
         this.status = status;
         this.isMandatory = isMandatory;
         this.createdDate = createdDate != null ? createdDate : LocalDate.now();
-        this.required = required;
         this.targetEmployees = targetEmployees != null ? targetEmployees : new ArrayList<>();
         this.company = company;
     }
 
-    public void complete() {
-        this.status = "DONE";
-        this.done = true;
-    }
+    public void complete() { this.status = "DONE"; }
 }

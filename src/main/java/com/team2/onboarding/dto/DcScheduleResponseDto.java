@@ -36,12 +36,10 @@ public class DcScheduleResponseDto {
         private String status;
 
         @JsonProperty("is_mandatory")
-        private Boolean isMandatory;
+        private boolean isMandatory;
 
         @JsonProperty("d_day")  // JPA 네이밍컨벤션으로 인해 JSON 중복 key 발생을 막기 위한 변수명 설정
         private String dayCount;
-
-        private boolean required;
     }
 
     public static DcScheduleResponseDto of(List<DcSchedule> scheduleList) {
@@ -65,9 +63,8 @@ public class DcScheduleResponseDto {
                             .title(s.getTitle())
                             .dueDate(s.getDueDate())
                             .status(s.getStatus())
-                            .isMandatory(s.getIsMandatory())
+                            .isMandatory(s.isMandatory())
                             .dayCount(dayCount)
-                            .required(s.isRequired())
                             .build();
                 })
                 .toList();
