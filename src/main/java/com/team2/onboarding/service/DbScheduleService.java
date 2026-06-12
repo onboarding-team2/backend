@@ -29,14 +29,14 @@ public class DbScheduleService {
         LocalDate startDate = null;
         LocalDate endDate = null;
 
-        if (period != null) {
+        if (period == null) { // 당해년도
+            startDate = LocalDate.now().withDayOfMonth(1);
+            endDate = LocalDate.of(startDate.getYear(), 12, 31);
+        } else if (period != 0) { // 1개월, 2개월
             startDate = LocalDate.now().withDayOfMonth(1);
             endDate = period == 1
                     ? startDate.plusMonths(1).minusDays(1)
                     : startDate.plusMonths(2).minusDays(1);
-        } else {
-            startDate = LocalDate.now().withDayOfMonth(1);
-            endDate = LocalDate.of(startDate.getYear(), 12, 31);
         }
 
         List<DbSchedule> schedules =
@@ -76,7 +76,7 @@ public class DbScheduleService {
                 .dueDate(request.getDueDate())
                 .description(request.getDescription())
                 .status("ACTIVE")
-                .isMandatory(Boolean.FALSE)
+                .isMandatory(false)
                 .createdDate(LocalDate.now())
                 .targetEmployees(targetEmployees)
                 .company(company)

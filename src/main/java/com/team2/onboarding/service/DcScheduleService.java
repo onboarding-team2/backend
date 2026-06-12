@@ -31,14 +31,14 @@ public class DcScheduleService {
         LocalDate startDate = null;
         LocalDate endDate = null;
 
-        if (period != null) {
+        if (period == null) {  // 당해년도
+            startDate = LocalDate.now().withDayOfMonth(1);
+            endDate = LocalDate.of(startDate.getYear(), 12, 31);
+        } else if (period != 0) {  // 1개월, 2개월 (0인 경우 전체기간)
             startDate = LocalDate.now().withDayOfMonth(1);
             endDate = period == 1
                     ? startDate.plusMonths(1).minusDays(1)
                     : startDate.plusMonths(2).minusDays(1);
-        } else {
-            startDate = LocalDate.now().withDayOfMonth(1);
-            endDate = LocalDate.of(startDate.getYear(), 12, 31);
         }
 
         List<DcSchedule> schedules =
@@ -78,7 +78,7 @@ public class DcScheduleService {
                 .dueDate(request.getDueDate())
                 .description(request.getDescription())
                 .status("ACTIVE")
-                .isMandatory(Boolean.FALSE)
+                .isMandatory(false)
                 .createdDate(LocalDate.now())
                 .targetEmployees(targetEmployees)
                 .company(company)
