@@ -15,6 +15,7 @@ import java.util.List;
 public class DcScheduleDetailResponseDto {
 
     private Long id;
+
     private String title;
 
     @JsonProperty("due_date")
@@ -24,7 +25,11 @@ public class DcScheduleDetailResponseDto {
     private LocalDate createdDate;
 
     private String description;
+
     private String status;
+
+    @JsonProperty("is_mandatory")
+    private Boolean isMandatory;
 
     @JsonProperty("d_day")  // JPA 네이밍컨벤션으로 인해 JSON 중복 key 발생을 막기 위한 변수명 설정
     private String dayCount;
@@ -84,6 +89,7 @@ public class DcScheduleDetailResponseDto {
                 .createdDate(schedule.getCreatedDate())
                 .description(schedule.getDescription())
                 .status(schedule.getStatus())
+                .isMandatory(schedule.getIsMandatory())
                 .dayCount(dayCount)
                 .companyName(schedule.getCompany() != null ? schedule.getCompany().getCompanyName() : null)
                 .brn(schedule.getCompany() != null ? schedule.getCompany().getBrn() : null)

@@ -36,6 +36,9 @@ public class DcSchedule {
     @Column(nullable = false, length = 20)
     private String status;
 
+    @Column(name = "is_mandatory", nullable = false)
+    private Boolean isMandatory;
+
     @Column(name = "created_date", nullable = false)
     private LocalDate createdDate;
 
@@ -64,6 +67,7 @@ public class DcSchedule {
             String title,
             String description,
             String status,
+            Boolean isMandatory,
             LocalDate createdDate,
             boolean required,
             List<Employee> targetEmployees,
@@ -73,6 +77,7 @@ public class DcSchedule {
         this.title = title;
         this.description = description;
         this.status = status;
+        this.isMandatory = isMandatory;
         this.createdDate = createdDate != null ? createdDate : LocalDate.now();
         this.required = required;
         this.targetEmployees = targetEmployees != null ? targetEmployees : new ArrayList<>();

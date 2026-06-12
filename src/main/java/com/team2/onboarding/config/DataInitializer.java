@@ -1,4 +1,4 @@
-package com.team2.onboarding.config;
+ackage com.team2.onboarding.config;
 
 import com.team2.onboarding.entity.*;
 import com.team2.onboarding.enums.EmployeeType;
@@ -143,15 +143,15 @@ public class DataInitializer {
             //   <95%  : 추가납입필요 (포스코 83, 롯데케미칼 88, OCI 91)
             // ═══════════════════════════════════════════════════════
             Object[][] dbConfigs = {
-                //  brn            name              rep       cY    cM cD  emp  ratio  irp  port  fee
-                {"1008100006", "포스코",             "최정우", 2020,  3, 1,  25,  83.0, 0.60,  3,  40},
-                {"1008100007", "SK하이닉스",         "곽노정", 2019,  6, 1,  28, 102.0, 0.40,  1,  55},
-                {"1008100008", "현대제철",           "안동일", 2018,  9, 1,  22,  96.0, 0.50,  0,  45},
-                {"1008100009", "롯데케미칼",         "김교현", 2021,  2, 1,  24,  88.0, 0.30,  2,  38},
-                {"1008100010", "한화에어로스페이스", "손재일", 2017,  5, 1,  30, 106.0, 0.70,  2,  70},
-                {"1008100011", "두산에너빌리티",     "정연인", 2022,  1, 1,  20,  97.0, 0.50,  0,  32},
-                {"1008100012", "GS칼텍스",           "허세홍", 2019,  3, 1,  26, 101.0, 0.40,  1,  50},
-                {"1008100013", "OCI",               "이우현", 2020,  7, 1,  23,  91.0, 0.30,  3,  35},
+                    //  brn            name              rep       cY    cM cD  emp  ratio  irp  port  fee
+                    {"1008100006", "포스코",             "최정우", 2020,  3, 1,  25,  83.0, 0.60,  3,  40},
+                    {"1008100007", "SK하이닉스",         "곽노정", 2019,  6, 1,  28, 102.0, 0.40,  1,  55},
+                    {"1008100008", "현대제철",           "안동일", 2018,  9, 1,  22,  96.0, 0.50,  0,  45},
+                    {"1008100009", "롯데케미칼",         "김교현", 2021,  2, 1,  24,  88.0, 0.30,  2,  38},
+                    {"1008100010", "한화에어로스페이스", "손재일", 2017,  5, 1,  30, 106.0, 0.70,  2,  70},
+                    {"1008100011", "두산에너빌리티",     "정연인", 2022,  1, 1,  20,  97.0, 0.50,  0,  32},
+                    {"1008100012", "GS칼텍스",           "허세홍", 2019,  3, 1,  26, 101.0, 0.40,  1,  50},
+                    {"1008100013", "OCI",               "이우현", 2020,  7, 1,  23,  91.0, 0.30,  3,  35},
             };
 
             // DC 5개 × 10명 = 50부터 DB 직원 전역 인덱스 시작
@@ -318,8 +318,8 @@ public class DataInitializer {
             boolean isTerminated = ei >= terminatedStart;
             LocalDate terminationDate = isTerminated
                     ? (ei == terminatedStart
-                            ? LocalDate.of(year - 1, 9, 30)
-                            : LocalDate.of(year - 1, 8, 15))
+                       ? LocalDate.of(year - 1, 9, 30)
+                       : LocalDate.of(year - 1, 8, 15))
                     : null;
 
             EmployeeType empType = ei < 2 ? EmployeeType.EXECUTIVE : EmployeeType.EMPLOYEE;
@@ -571,29 +571,29 @@ public class DataInitializer {
     private List<InvestmentProductMaster> createProductMasters(List<AssetClassMaster> ac) {
         // {productName, provider, assetClassIdx, category, isPrinGuaranteed, annualRate, rate3y, feeRate, tag, isDefault}
         Object[][] data = {
-            // ── DEPOSIT (ac[0]) ──────────────────────────────────────────────────────
-            {"IBK 정기예금 1년",            "IBK기업은행",      0, "정기예금",       true,  "3.60", "3.60", "0.0000", "기본",       true},  // 0
-            {"IBK GIC 2년",                 "IBK연금보험",      0, "이율보증형보험", true,  "3.40", "3.40", "0.0000", null,         false}, // 1
-            {"ELB 지수연계형",              "IBK투자증권",      0, "ELB 및 ELD",     true,  "4.10", "4.10", "0.0000", "수익률 1위", false}, // 2
-            // ── BOND (ac[1]) ─────────────────────────────────────────────────────────
-            {"KODEX 28-12 회사채(AA-)",     "삼성자산운용",     1, "ETF",            false, "5.80", "5.80", "0.0900", "수익률 1위", true},  // 3
-            {"ACE 국고채10년",              "한국투자신탁운용", 1, "ETF",            false, "4.90", "4.90", "0.0500", "안정",       false}, // 4
-            {"국공채 펀드",                 "IBK자산운용",      1, "펀드",           false, "4.00", "4.00", "0.2500", null,         false}, // 5
-            // ── MIXED (ac[2]) ────────────────────────────────────────────────────────
-            {"TIGER 글로벌멀티에셋TDF2040", "미래에셋자산운용", 2, "ETF",            false, "11.30","11.30","0.3900", "TDF",        true},  // 6
-            {"KODEX TRF3070",               "삼성자산운용",     2, "ETF",            false, "8.40", "8.40", "0.2400", "안정혼합",   false}, // 7
-            {"한국밸런스 혼합펀드",         "한국투자신탁운용", 2, "펀드",           false, "6.80", "6.80", "0.4500", null,         false}, // 8
-            // ── DOM_EQ (ac[3]) ───────────────────────────────────────────────────────
-            {"KODEX 200",                   "삼성자산운용",     3, "ETF",            false, "8.20", "8.20", "0.1500", "대표지수",   true},  // 9
-            {"TIGER 코스피",                "미래에셋자산운용", 3, "ETF",            false, "7.90", "7.90", "0.1500", null,         false}, // 10
-            {"KODEX 코스닥150",             "삼성자산운용",     3, "ETF",            false, "11.40","11.40","0.2500", "수익률 1위", false}, // 11
-            {"ACE 배당성장",                "한국투자신탁운용", 3, "ETF",            false, "9.10", "9.10", "0.1500", "배당",       false}, // 12
-            // ── OVS_EQ (ac[4]) ──────────────────────────────────────────────────────
-            {"TIGER 미국나스닥100",         "미래에셋자산운용", 4, "ETF",            false, "21.50","21.50","0.0700", "수익률 1위", true},  // 13
-            {"KODEX 미국S&P500TR",          "삼성자산운용",     4, "ETF",            false, "17.20","17.20","0.0099", "보수 최저",  true},  // 14
-            {"SOL 미국배당다우존스",        "신한자산운용",     4, "ETF",            false, "11.90","11.90","0.0900", "월배당",     false}, // 15
-            {"ACE 미국테크TOP10",           "한국투자신탁운용", 4, "ETF",            false, "24.10","24.10","0.1000", "고변동",     false}, // 16
-            {"TIGER 차이나전기차",          "미래에셋자산운용", 4, "ETF",            false, "6.20", "6.20", "0.4900", null,         false}, // 17
+                // ── DEPOSIT (ac[0]) ──────────────────────────────────────────────────────
+                {"IBK 정기예금 1년",            "IBK기업은행",      0, "정기예금",       true,  "3.60", "3.60", "0.0000", "기본",       true},  // 0
+                {"IBK GIC 2년",                 "IBK연금보험",      0, "이율보증형보험", true,  "3.40", "3.40", "0.0000", null,         false}, // 1
+                {"ELB 지수연계형",              "IBK투자증권",      0, "ELB 및 ELD",     true,  "4.10", "4.10", "0.0000", "수익률 1위", false}, // 2
+                // ── BOND (ac[1]) ─────────────────────────────────────────────────────────
+                {"KODEX 28-12 회사채(AA-)",     "삼성자산운용",     1, "ETF",            false, "5.80", "5.80", "0.0900", "수익률 1위", true},  // 3
+                {"ACE 국고채10년",              "한국투자신탁운용", 1, "ETF",            false, "4.90", "4.90", "0.0500", "안정",       false}, // 4
+                {"국공채 펀드",                 "IBK자산운용",      1, "펀드",           false, "4.00", "4.00", "0.2500", null,         false}, // 5
+                // ── MIXED (ac[2]) ────────────────────────────────────────────────────────
+                {"TIGER 글로벌멀티에셋TDF2040", "미래에셋자산운용", 2, "ETF",            false, "11.30","11.30","0.3900", "TDF",        true},  // 6
+                {"KODEX TRF3070",               "삼성자산운용",     2, "ETF",            false, "8.40", "8.40", "0.2400", "안정혼합",   false}, // 7
+                {"한국밸런스 혼합펀드",         "한국투자신탁운용", 2, "펀드",           false, "6.80", "6.80", "0.4500", null,         false}, // 8
+                // ── DOM_EQ (ac[3]) ───────────────────────────────────────────────────────
+                {"KODEX 200",                   "삼성자산운용",     3, "ETF",            false, "8.20", "8.20", "0.1500", "대표지수",   true},  // 9
+                {"TIGER 코스피",                "미래에셋자산운용", 3, "ETF",            false, "7.90", "7.90", "0.1500", null,         false}, // 10
+                {"KODEX 코스닥150",             "삼성자산운용",     3, "ETF",            false, "11.40","11.40","0.2500", "수익률 1위", false}, // 11
+                {"ACE 배당성장",                "한국투자신탁운용", 3, "ETF",            false, "9.10", "9.10", "0.1500", "배당",       false}, // 12
+                // ── OVS_EQ (ac[4]) ──────────────────────────────────────────────────────
+                {"TIGER 미국나스닥100",         "미래에셋자산운용", 4, "ETF",            false, "21.50","21.50","0.0700", "수익률 1위", true},  // 13
+                {"KODEX 미국S&P500TR",          "삼성자산운용",     4, "ETF",            false, "17.20","17.20","0.0099", "보수 최저",  true},  // 14
+                {"SOL 미국배당다우존스",        "신한자산운용",     4, "ETF",            false, "11.90","11.90","0.0900", "월배당",     false}, // 15
+                {"ACE 미국테크TOP10",           "한국투자신탁운용", 4, "ETF",            false, "24.10","24.10","0.1000", "고변동",     false}, // 16
+                {"TIGER 차이나전기차",          "미래에셋자산운용", 4, "ETF",            false, "6.20", "6.20", "0.4900", null,         false}, // 17
         };
         List<InvestmentProductMaster> result = new ArrayList<>();
         for (Object[] row : data) {
@@ -658,7 +658,7 @@ public class DataInitializer {
                     .dueDate(feeDue)
                     .description("연간 " + feeType + " 수수료 납입 기한 (계약응당일 기준)")
                     .status(feeStatus)
-                    .required(true)
+                    .isMandatory(true)
                     .company(company)
                     .build());
         }
@@ -669,7 +669,7 @@ public class DataInitializer {
                 .dueDate(LocalDate.of(year, 12, 15))
                 .description("당해 연도 확정급여 적립금 납입 기한 (매년 12월 15일)")
                 .status("ACTIVE")
-                .required(true)
+                .isMandatory(true)
                 .company(company)
                 .build());
 
@@ -688,7 +688,7 @@ public class DataInitializer {
                             .dueDate(p.getMaturityDate())
                             .description(productName + " 만기 도래 — 재투자 또는 상품 전환 검토 필요")
                             .status(matStatus)
-                            .required(true)
+                            .isMandatory(true)
                             .company(company)
                             .build());
                 });
@@ -714,7 +714,7 @@ public class DataInitializer {
                     .dueDate(feeDue)
                     .description("연간 " + feeType + " 수수료 납입 기한 (계약응당일 기준)")
                     .status(feeStatus)
-                    .required(true)
+                    .isMandatory(true)
                     .company(company)
                     .build());
         }
@@ -731,7 +731,7 @@ public class DataInitializer {
                             .dueDate(due)
                             .description(year + "년 " + m + "월분 DC 부담금 납입 (월납)")
                             .status(s)
-                            .required(true)
+                            .isMandatory(true)
                             .company(company)
                             .build());
                 }
@@ -748,7 +748,7 @@ public class DataInitializer {
                             .dueDate(due)
                             .description(year + "년 " + qLabels[q] + " DC 부담금 납입 (분기납)")
                             .status(s)
-                            .required(true)
+                            .isMandatory(true)
                             .company(company)
                             .build());
                 }
@@ -760,7 +760,7 @@ public class DataInitializer {
                         .dueDate(LocalDate.of(year - 1, 12, 31))
                         .description((year - 1) + "년 연간 DC 부담금 미납 — 즉시 납입 필요")
                         .status("OVERDUE")
-                        .required(true)
+                        .isMandatory(true)
                         .company(company)
                         .build());
                 dcScheduleRepository.save(DcSchedule.builder()
@@ -768,7 +768,7 @@ public class DataInitializer {
                         .dueDate(LocalDate.of(year, 12, 31))
                         .description(year + "년 연간 DC 부담금 납입 예정 (연납)")
                         .status("ACTIVE")
-                        .required(true)
+                        .isMandatory(true)
                         .company(company)
                         .build());
             }
@@ -780,7 +780,7 @@ public class DataInitializer {
                 .dueDate(LocalDate.of(year, 12, 15))
                 .description("당해 연도 연간임금총액 확정 및 퇴직연금 기여율 재산정")
                 .status("ACTIVE")
-                .required(true)
+                .isMandatory(true)
                 .company(company)
                 .build());
     }

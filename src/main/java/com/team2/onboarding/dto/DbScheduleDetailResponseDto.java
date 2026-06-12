@@ -1,7 +1,6 @@
 package com.team2.onboarding.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.team2.onboarding.entity.Employee;
 import com.team2.onboarding.entity.DbSchedule;
 import lombok.Builder;
 import lombok.Getter;
@@ -15,6 +14,7 @@ import java.util.List;
 public class DbScheduleDetailResponseDto {
 
     private Long id;
+
     private String title;
 
     @JsonProperty("due_date")
@@ -24,7 +24,11 @@ public class DbScheduleDetailResponseDto {
     private LocalDate createdDate;
 
     private String description;
+
     private String status;
+
+    @JsonProperty("is_mandatory")
+    private Boolean isMandatory;
 
     @JsonProperty("d_day")  // JPA 네이밍컨벤션으로 인해 JSON 중복 key 발생을 막기 위한 변수명 설정
     private String dayCount;
@@ -89,6 +93,7 @@ public class DbScheduleDetailResponseDto {
                 .createdDate(schedule.getCreatedDate())
                 .description(schedule.getDescription())
                 .status(schedule.getStatus())
+                .isMandatory(schedule.getIsMandatory())
                 .dayCount(dayCount)
                 .companyName(companyName)
                 .brn(brn)

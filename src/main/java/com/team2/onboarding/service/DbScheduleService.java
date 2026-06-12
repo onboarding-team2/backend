@@ -29,7 +29,10 @@ public class DbScheduleService {
         LocalDate startDate = null;
         LocalDate endDate = null;
 
-        if (period != null) {
+        if (period == null) { // 당해년도
+            startDate = LocalDate.now().withDayOfMonth(1);
+            endDate = LocalDate.of(startDate.getYear(), 12, 31);
+        } else if (period != 0) { // 1개월, 2개월
             startDate = LocalDate.now().withDayOfMonth(1);
             endDate = period == 1
                     ? startDate.plusMonths(1).minusDays(1)
@@ -73,6 +76,7 @@ public class DbScheduleService {
                 .dueDate(request.getDueDate())
                 .description(request.getDescription())
                 .status("ACTIVE")
+                .isMandatory(false)
                 .createdDate(LocalDate.now())
                 .required(false)
                 .targetEmployees(targetEmployees)
@@ -87,9 +91,11 @@ public class DbScheduleService {
     public void deleteSchedule(Long scheduleId, Long companyId) {
         DbSchedule schedule = dbScheduleRepository.findByIdAndCompany_Id(scheduleId, companyId)
                 .orElseThrow(() -> new EntityNotFoundException("일정을 찾을 수 없습니다. id=" + scheduleId));
-        if (schedule.isRequired()) {
-            throw new IllegalStateException("필수 일정이므로 삭제 불가능합니다.");
+
+        if (schedule.getIsMandatory()) {
+            throw new IllegalStateException("삭제할 수 없는 의무이행 일정입니다. id=" + scheduleId);
         }
+      
         dbScheduleRepository.delete(schedule);
     }
 

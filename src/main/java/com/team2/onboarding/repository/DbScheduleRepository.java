@@ -12,7 +12,7 @@ import java.util.Optional;
 
 public interface DbScheduleRepository extends JpaRepository<DbSchedule, Long> {
     // getSchedules - companyId(Required), keyword 검색 & period 옵션
-    // if (keyword == null && period == null) { findByCompany_IdOrderByDueDateAsc(Long companyId) } <- 전체 목록
+    // period: null(당해년도) / 0 (전체년도) / 1 (당월) / 2(당해년도 당월~익월)
     // if (keyword != null && period != null) { 키워드와 기간 모두 포함하여 검색 }
     // if (keyword != null && period == null) { 키워드로만 검색 }
     // if (keyword == null && period != null) { 기간으로만 검색 }
