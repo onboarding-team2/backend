@@ -4,6 +4,7 @@ import com.team2.onboarding.dto.DCDashboardResponseDto;
 import com.team2.onboarding.dto.DefaultOptionMemberDto;
 import com.team2.onboarding.dto.DcMemberItemDto;
 import com.team2.onboarding.dto.PageResponse;
+import com.team2.onboarding.entity.AnnualSalary;
 import com.team2.onboarding.entity.CompanyRetirementDc;
 import com.team2.onboarding.entity.Employee;
 import com.team2.onboarding.entity.EmployeeRetirementDc;
@@ -148,12 +149,28 @@ public class DCService {
                 .stream()
                 .collect(Collectors.toMap(r -> r.getEmployee().getId(), r -> r));
 
+        // 가입자별 가장 최근 연도의 연봉 정보 (부담금 납입 여부 판단용)
+        Map<Long, AnnualSalary> latestSalaryMap = annualSalaryRepository
+                .findByEmployee_Company_Id(id)
+                .stream()
+                .collect(Collectors.toMap(
+                        s -> s.getEmployee().getId(),
+                        s -> s,
+                        (a, b) -> a.getYear().compareTo(b.getYear()) >= 0 ? a : b
+                ));
+
         Collator collator = Collator.getInstance(Locale.KOREAN);
 
         List<DcMemberItemDto> all = employees.stream()
                 .map(e -> {
                     EmployeeRetirementDc erd = retirementMap.get(e.getId());
                     EmployeeType empType = e.getEmployeeType();
+                    AnnualSalary salary = latestSalaryMap.get(e.getId());
+                    Long minContribution = salary != null ? salary.getMinContribution() : null;
+                    Long actualContribution = salary != null ? salary.getContribution() : null;
+                    Boolean contributionPaid = (minContribution != null && actualContribution != null)
+                            ? actualContribution >= minContribution
+                            : null;
                     return DcMemberItemDto.builder()
                             .id(e.getId())
                             .name(e.getName())
@@ -164,7 +181,9 @@ public class DCService {
                             .hasIrpAccount(erd != null ? erd.getHasIrpAccount() : null)
                             .defaultOption(erd != null ? erd.getDefaultOption() : null)
                             .balance(null)
-                            .contributionPaid(null)
+                            .minContribution(minContribution)
+                            .contribution(actualContribution)
+                            .contributionPaid(contributionPaid)
                             .status(e.getTerminationDate() != null ? "퇴직" : "재직")
                             .build();
                 })

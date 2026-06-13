@@ -12,6 +12,8 @@ public interface AnnualSalaryRepository
 
     List<AnnualSalary> findByEmployee_IdOrderByYearDesc(Long employeeId);
 
+    List<AnnualSalary> findByEmployee_Company_Id(Long companyId);
+
     @Query("""
         SELECT COALESCE(SUM(a.contribution), 0)
         FROM AnnualSalary a
