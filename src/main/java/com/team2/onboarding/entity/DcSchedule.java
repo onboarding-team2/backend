@@ -76,7 +76,9 @@ public class DcSchedule {
         this.company = company;
     }
 
-    public void complete() { this.status = "DONE"; }
+    public void toggleStatus() {
+        this.status = "DONE".equals(this.status) ? "ACTIVE" : "DONE";
+    }
 
     public void update(String title, LocalDate dueDate, String description, List<Employee> targetEmployees) {
         if (title != null) this.title = title;

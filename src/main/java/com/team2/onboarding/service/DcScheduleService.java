@@ -124,7 +124,7 @@ public class DcScheduleService {
     public DcScheduleDetailResponseDto completeSchedule(Long scheduleId, Long companyId) {
         DcSchedule schedule = dcScheduleRepository.findByIdAndCompany_Id(scheduleId, companyId)
                 .orElseThrow(() -> new EntityNotFoundException("일정을 찾을 수 없습니다. id=" + scheduleId));
-        schedule.complete();
+        schedule.toggleStatus();
         dcScheduleRepository.save(schedule);
         return DcScheduleDetailResponseDto.from(schedule);
     }

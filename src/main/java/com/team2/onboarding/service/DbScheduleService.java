@@ -124,7 +124,7 @@ public class DbScheduleService {
     public DbScheduleDetailResponseDto completeSchedule(Long scheduleId, Long companyId) {
         DbSchedule schedule = dbScheduleRepository.findByIdAndCompany_Id(scheduleId, companyId)
                 .orElseThrow(() -> new EntityNotFoundException("일정을 찾을 수 없습니다. id=" + scheduleId));
-        schedule.complete();
+        schedule.toggleStatus();
         dbScheduleRepository.save(schedule);
         return DbScheduleDetailResponseDto.from(schedule);
     }
