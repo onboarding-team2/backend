@@ -643,7 +643,8 @@ public class DataInitializer {
     // DB 일정 생성
     //  ① 수수료 납입 (운용관리·자산관리) — 계약응당일 기준 매년
     //  ② 적립금 납입 — 매년 12/15
-    //  ③ 보유상품 만기 도래 — 당해 연도 만기인 운용중 상품 전체
+    //  ③ DB형 추계액 갱신 — 매년 12/15
+    //  ④ 보유상품 만기 도래 — 당해 연도 만기인 운용중 상품 전체
     // ─────────────────────────────────────────────────────────────
     private void insertDbSchedules(Company company, CompanyRetirementDb crdb, int year) {
         LocalDate today = LocalDate.now();
@@ -671,7 +672,17 @@ public class DataInitializer {
                 .company(company)
                 .build());
 
-        // ③ 보유상품 만기 도래 — investment_products_db 중 올해 만기인 상품 (만기 임박 순)
+        // ③ DB형 추계액 갱신 — 매년 12/15
+        dbScheduleRepository.save(DbSchedule.builder()
+                .title("DB형 추계액 갱신")
+                .dueDate(LocalDate.of(year, 12, 15))
+                .description("확정급여형(DB) 퇴직연금 추계액 갱신 기한 (매년 12월 15일)")
+                .status("ACTIVE")
+                .isMandatory(true)
+                .company(company)
+                .build());
+
+        // ④ 보유상품 만기 도래 — investment_products_db 중 올해 만기인 상품 (만기 임박 순)
         investmentProductDbRepository.findWithProductMasterByCompanyRetirementDb_Id(crdb.getId()).stream()
                 .filter(p -> "운용중".equals(p.getStatus())
                         && p.getMaturityDate() != null
@@ -837,7 +848,7 @@ public class DataInitializer {
                 }
             }
             case YEARLY -> {
-                String[] statuses = {"납입완료", "미납", "예정"};
+                String[] statuses = {"납입완료", "납입완료", "예정"};
                 for (int i = 0; i < 3; i++) {
                     int y = year - 2 + i;
                     LocalDate dueDate = LocalDate.of(y, 12, 31);

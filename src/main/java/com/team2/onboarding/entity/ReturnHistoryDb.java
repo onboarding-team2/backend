@@ -12,7 +12,7 @@ import java.time.LocalDate;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "return_history_db",
+@Table(name = "db_return_history",
         uniqueConstraints = @UniqueConstraint(columnNames = {"company_retirement_db_id", "base_date"}))
 public class ReturnHistoryDb {
 

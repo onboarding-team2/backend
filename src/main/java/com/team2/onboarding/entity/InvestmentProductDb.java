@@ -14,7 +14,7 @@ import java.time.LocalDate;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "investment_products_db")
+@Table(name = "db_investment_products")
 @Checks({
         @Check(name = "chk_product_status",
                 constraints = "status IN ('운용중', '만기완료')"),

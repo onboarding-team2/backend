@@ -16,7 +16,7 @@ import java.util.List;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "schedules_dc")
+@Table(name = "dc_schedules")
 @Check(name = "chk_dc_schedule_status", constraints = "status IN ('ACTIVE', 'DONE', 'OVERDUE')")
 public class DcSchedule {
 

@@ -12,7 +12,7 @@ import java.math.BigDecimal;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "portfolio_simulation_items",
+@Table(name = "db_portfolio_simulation_items",
         uniqueConstraints = @UniqueConstraint(columnNames = {"simulation_id", "asset_class_id", "product_master_id"}))
 @Check(name = "chk_weight", constraints = "weight_pct > 0 AND weight_pct <= 100")
 public class PortfolioSimulationItem {

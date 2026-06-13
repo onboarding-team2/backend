@@ -12,7 +12,7 @@ import org.hibernate.annotations.OnDeleteAction;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(
-        name = "annual_salaries_db",
+        name = "db_annual_salaries",
         uniqueConstraints = @UniqueConstraint(name = "uq_db_salary_year_employee", columnNames = {"year", "employee_id"})
 )
 public class AnnualSalaryDb {

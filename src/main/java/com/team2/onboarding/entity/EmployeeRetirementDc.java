@@ -15,7 +15,7 @@ import java.time.LocalDate;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "employee_retirement_dc")
+@Table(name = "dc_employee_retirement")
 @Checks({
         @Check(name = "chk_account_type",   constraints = "account_type IN ('DC')"),
         @Check(name = "chk_default_option", constraints = "default_option IN ('Y', 'N') OR default_option IS NULL")
