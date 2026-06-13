@@ -1,6 +1,7 @@
 package com.team2.onboarding.exception;
 
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -32,6 +33,14 @@ public class GlobalExceptionHandler {
     ) {
         return ResponseEntity.badRequest()
                 .body(e.getMessage());
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<String> handleDataIntegrityViolation(
+            DataIntegrityViolationException e
+    ) {
+        return ResponseEntity.badRequest()
+                .body("저장 데이터가 유효하지 않습니다. 입력값을 확인해주세요.");
     }
 
     @ExceptionHandler(EntityNotFoundException.class)

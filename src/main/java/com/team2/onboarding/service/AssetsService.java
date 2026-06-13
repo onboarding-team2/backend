@@ -175,6 +175,7 @@ public class AssetsService {
 
     @Transactional
     public SimulationResponseDto saveSimulation(String companyId, SimulationSaveRequestDto req) {
+        validateSimulationRequest(req);
         Long id = Long.parseLong(companyId);
         CompanyRetirementDb crd = companyRetirementDbRepository.findByCompany_Id(id)
                 .orElseThrow(() -> new IllegalArgumentException("DB 계약 정보를 찾을 수 없습니다."));
@@ -259,6 +260,33 @@ public class AssetsService {
                 .createdAt(sim.getCreatedAt().toString())
                 .items(items)
                 .build();
+    }
+
+    private void validateSimulationRequest(SimulationSaveRequestDto req) {
+        if (req.getExpectedReturnRate() == null)
+            throw new IllegalArgumentException("예상 수익률은 필수입니다.");
+        if (req.getRiskAssetRatio() == null)
+            throw new IllegalArgumentException("위험자산 비율은 필수입니다.");
+        if (req.getRiskAssetRatio().compareTo(BigDecimal.valueOf(100)) > 0)
+            throw new IllegalArgumentException("위험자산 비율은 100%를 초과할 수 없습니다.");
+
+        if (req.getItems() == null || req.getItems().isEmpty()) return;
+
+        Set<String> seen = new HashSet<>();
+        for (SimulationSaveRequestDto.SimulationItemDto item : req.getItems()) {
+            if (item.getAssetClassId() == null)
+                throw new IllegalArgumentException("자산군 ID는 필수입니다.");
+            if (item.getWeightPct() == null)
+                throw new IllegalArgumentException("비중(weight_pct)은 필수입니다.");
+            if (item.getAppliedReturn() == null)
+                throw new IllegalArgumentException("적용 수익률은 필수입니다.");
+            if (item.getWeightPct().compareTo(BigDecimal.ZERO) <= 0 || item.getWeightPct().compareTo(BigDecimal.valueOf(100)) > 0)
+                throw new IllegalArgumentException("비중은 0 초과 100 이하여야 합니다.");
+
+            String key = item.getAssetClassId() + ":" + item.getProductMasterId();
+            if (!seen.add(key))
+                throw new IllegalArgumentException("동일한 자산군/상품 조합이 중복 포함되어 있습니다.");
+        }
     }
 
     private long evaluateAmount(InvestmentProductDb p) {
