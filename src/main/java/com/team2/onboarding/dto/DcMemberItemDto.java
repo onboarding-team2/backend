@@ -18,6 +18,8 @@ public class DcMemberItemDto {
     private String hasIrpAccount;
     private String defaultOption;
     private Long balance;
+    private Long minContribution;
+    private Long contribution;
     private Boolean contributionPaid;
     private String status;
 }
