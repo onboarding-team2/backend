@@ -14,7 +14,7 @@ import java.time.LocalDate;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(
-        name = "employee_retirement_db",
+        name = "db_employee_retirement",
         uniqueConstraints = @UniqueConstraint(columnNames = {"employee_id", "company_retirement_db_id"})
 )
 public class EmployeeRetirementDb {

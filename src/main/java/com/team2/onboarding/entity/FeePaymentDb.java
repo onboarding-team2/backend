@@ -14,7 +14,7 @@ import java.time.LocalDate;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(
-        name = "fee_payments_db",
+        name = "db_fee_payments",
         uniqueConstraints = @UniqueConstraint(
                 name = "uq_db_fee_per_year",
                 columnNames = {"company_retirement_db_id", "payment_year", "fee_type"}

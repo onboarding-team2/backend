@@ -15,7 +15,7 @@ import java.time.LocalDate;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(
-        name = "reserve_db",
+        name = "db_reserve",
         uniqueConstraints = @UniqueConstraint(columnNames = {"company_retirement_db_id", "base_date"})
 )
 @Checks({

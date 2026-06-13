@@ -16,7 +16,7 @@ import java.util.List;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "portfolio_simulation_db")
+@Table(name = "db_portfolio_simulation")
 @Checks({
         @Check(name = "chk_sim_status",   constraints = "status IN ('임시저장', '확정', '폐기')"),
         @Check(name = "chk_risk_limit",   constraints = "risk_asset_ratio <= 100"),

@@ -13,7 +13,7 @@ import org.hibernate.annotations.OnDeleteAction;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(
-        name = "annual_salaries_dc",
+        name = "dc_annual_salaries",
         uniqueConstraints = @UniqueConstraint(name = "uq_dc_salary_year_employee", columnNames = {"year", "employee_id"})
 )
 @Check(name = "chk_contribution_min", constraints = "contribution >= min_contribution")
